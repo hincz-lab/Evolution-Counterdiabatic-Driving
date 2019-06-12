@@ -4,7 +4,7 @@ Codes dealing with counter adiabatic control of evolutionary processes
 
 ## Running the model
 
-First, clone this repository:
+First, clone this repository by executing the following command in a terminal:
 
 ```bash
 git clone https://github.com/Peyara/Evolution.git
@@ -13,6 +13,18 @@ git clone https://github.com/Peyara/Evolution.git
 Currently, this repository contains a 2-dimensional
 implementation of the model and the begginings of an
 n-dimensional model (in progress).
+
+The n-dimensional model has a dependency on the Empirical library. To run it, clone that as well:
+
+```bash
+git clone https://github.com/devosoft/Empirical.git
+```
+
+Then go into the directory for this repository:
+
+```bash
+cd Evolution
+```
 
 ### 2-Dimensional Model
 
