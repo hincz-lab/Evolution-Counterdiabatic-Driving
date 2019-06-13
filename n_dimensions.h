@@ -28,7 +28,9 @@ enum class FITNESS_CHANGE_RULES { NONE=0, VAR=1, VARCD=2};
 
 // Functions for changing s values over time
 // Written by Shamreen
-double sVarCD(double x) //Defining tanh based gen varying s function
+
+// Defining tanh based gen varying s function
+double sVarCD(double x)
 {
   double s,ds,scd;
   s=(double)(0.00075+0.00075*tanh((x-500.)/270.));
@@ -37,7 +39,8 @@ double sVarCD(double x) //Defining tanh based gen varying s function
   return scd;
 }
 
-double sVar(double x) //Defining tanh based gen varying s function
+// Defining tanh based gen varying s function
+double sVar(double x)
 {
   double s;
   s=(double)(0.00075+0.00075*tanh((x-500.)/270.));
@@ -45,6 +48,8 @@ double sVar(double x) //Defining tanh based gen varying s function
 }
 
 // Functions for extracting parameter lists from files
+
+// Loads specified file into file object and prints appropriate warnings.
 emp::File ExtractStringFromFile(std::string & fname, std::string param_name) {
     std::cout << "Loading " << param_name << " from file: " << fname <<
         ". If you were not trying to load a file, check for stray " << 
@@ -61,14 +66,16 @@ emp::File ExtractStringFromFile(std::string & fname, std::string param_name) {
     return param_file;
 }
 
+// Return the first line of the file. For use with one line files
 std::string ExtractStringFromOneLineFile(std::string & fname, std::string param_name) {
     emp::File param_file = ExtractStringFromFile(fname, param_name);
-    return param_file.front();
+    return param_file.front(); // Return first (theoretically only) line
 }
 
+// Returns the entire file. For use with multi-line files
 emp::vector<std::string> ExtractMultiLineFile(std::string & fname, std::string param_name) {
     emp::File param_file = ExtractStringFromFile(fname, param_name);
-    return param_file.GetAllLines();
+    return param_file.GetAllLines(); // Return all lines
 }
 
 
@@ -106,6 +113,7 @@ class NDimSim {
         rnd = emp::Random(config.RANDOM_SEED());
 
         // Localize config parameters
+        // (we do this for efficiency)
         N_GENOTYPES = config.N_GENOTYPES();
         GENERATIONS = config.GENERATIONS();
         K = config.K();
@@ -190,6 +198,7 @@ class NDimSim {
         return Birth()/(1 + rel_fitnesses[genotype]);
     }
 
+    // Updates fitnesses based on specified change rule
     void UpdateSs() {
         switch(FITNESS_CHANGE_RULE) {
             case (int)FITNESS_CHANGE_RULES::NONE:
@@ -199,7 +208,6 @@ class NDimSim {
                 // This only really works for 1D right now
                 for (size_t i = 1; i < rel_fitnesses.size(); i++) {
                     rel_fitnesses[i] = sVar(curr_gen);
-                    // std::cout << "S: " << rel_fitnesses[i] << std::endl;
                 }
                 break;
             case (int)FITNESS_CHANGE_RULES::VARCD:
@@ -215,11 +223,15 @@ class NDimSim {
     }
 
     void RunStep() {
-        UpdateSs();
+        UpdateSs(); // Update fitnesses as appropriate
+
+        // Initialize new_pops to 0 so that we can accumulate the 
+        // updated population sizes of each genotype
         for (size_t i = 0; i < new_pops.size(); i++) {
             new_pops[i] = 0;
         }
 
+        // Handle birth/death/mutation
         for (int genotype = 0; genotype < N_GENOTYPES; genotype++) {
             // Store reference to current probability map, for simplicity
             emp::IndexMap & mut_probs = mut_rates[genotype];
@@ -237,10 +249,9 @@ class NDimSim {
                         // Select genotype of offsping based on transition probabilities
                         size_t new_genotype = mut_probs.Index(rnd.GetDouble(1));
                         new_pops[new_genotype]++;             
-                    } else{rnd.GetDouble(1);} 
-                } else{rnd.GetDouble(1);rnd.GetDouble(1);}
+                    }
+                }
             }
-
         }
 
         // Update current population sizes
@@ -248,6 +259,7 @@ class NDimSim {
 
     }
 
+    // Run for specified number of generations
     void Run() {
         for (int gen = 0; gen <= GENERATIONS; gen++) {
             curr_gen = gen;
@@ -257,21 +269,27 @@ class NDimSim {
         }
     }
 
+    // Pull fitness values out of config parameter and put them in the
+    // appropriate vector, giveing warnings and errors as neccessary.
     void InitializeFitnesses() {
         if (emp::has_letter(FITNESSES)) {
             // FITNESSES is a file
             FITNESSES = ExtractStringFromOneLineFile(FITNESSES, "fitness");
         }
 
+        // Split string up into smaller strings that contain individual values
         emp::vector<std::string> sliced_fits = emp::slice(FITNESSES, ',');
 
+        // There should be N_GENOTYPES fitness values
         if ((int)sliced_fits.size() != N_GENOTYPES) {
             if ((int)sliced_fits.size() == N_GENOTYPES - 1) {
-                // Assume missing fitness is the one for the
-                // genotype all other fitnesses are relative to
-                // (the first genotype)
+                // It's easy to forget to provide a fitness for the
+                // focal genotype, and it's always 0, so we'll assume
+                // that's what happened and fill it in.
                 sliced_fits.insert(sliced_fits.begin(),"0"); 
             } else {
+                // If there are a different number of fitnesses, then
+                // there's really nothing we can do
                 std::cout << "Error: Not enough fitnesses supplied." << 
                     " Attempting to assign " << sliced_fits.size() << 
                     " to " << N_GENOTYPES << " genotypes." << std::endl;
@@ -279,10 +297,14 @@ class NDimSim {
             }
         }
 
+        // The focal genotype needs to have a relative fitness of 0.
+        // I assume math stuff will break if this condition is not met.
         if (sliced_fits[0] != "0") {
             std::cout << "Warning: Relative fitness of focal genotype is not 0" << std::endl;
         }
 
+        // Put the relative fitnesses we're using in the correct vector
+        // and print them out
         std::cout << "Relative fitnesses: " << std::endl;
         for (int i = 0; i < N_GENOTYPES; i++) {
             rel_fitnesses[i] = emp::from_string<double>(sliced_fits[i]);
@@ -291,6 +313,8 @@ class NDimSim {
         std::cout << std::endl;
     }
 
+    // Pull initial population values out of config parameter and put them in the
+    // appropriate vector, giveing warnings and errors as neccessary.
     void InitializeInitPops() {
         if (emp::has_letter(INIT_POPS)) {
             // INIT_POPS is a filename
@@ -299,6 +323,7 @@ class NDimSim {
 
         emp::vector<std::string> sliced_pops = emp::slice(INIT_POPS, ',');
 
+        // Need a population size for each genotype
         if ((int)sliced_pops.size() != N_GENOTYPES) {
             std::cout << "Error: Not enough initial population sizes supplied." << 
                 " Attempting to assign " << sliced_pops.size() << 
@@ -306,6 +331,8 @@ class NDimSim {
             exit(1);
         }
 
+        // Put the initial population sizes we're using in the correct vector
+        // and print them out
         std::cout << "Initial populations: " << std::endl;
         for (int i = 0; i < N_GENOTYPES; i++) {
             init_pops[i] = emp::from_string<double>(sliced_pops[i]);
@@ -314,7 +341,10 @@ class NDimSim {
         std::cout << std::endl;
     }
 
+    // Pull transition probabilities out of config parameter and put them in the
+    // appropriate vector, giveing warnings and errors as neccessary.
     void InitializeTransitionProbs() {
+        // First separate the rows
         emp::vector<std::string> rows;
         if (emp::has_one_of(TRANSITION_PROBS, "abcdefghijklmopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")) {
             // INIT_POPS is a filename
@@ -325,6 +355,7 @@ class NDimSim {
             rows = emp::slice(TRANSITION_PROBS, ':');
         }
 
+        // Need to have transition probabilities for everything
         if ((int)rows.size() != N_GENOTYPES) {
             std::cout << "Error: Not enough rows in transition matrix." << 
                 " Attempting to assign " << rows.size() << 
@@ -335,8 +366,10 @@ class NDimSim {
 
         std::cout << "Transition probabilities: " << std::endl;
         for (int i = 0; i < N_GENOTYPES; i++) {
+            // Now separate numbers within a row
             emp::vector<std::string> sliced_probs = emp::slice(rows[i], ',');
 
+            // Need to have transition probabilities for everything
             if ((int)sliced_probs.size() != N_GENOTYPES) {
                 std::cout << "Error: Not enough columns in row." << 
                     " Attempting to assign " << sliced_probs.size() << 
@@ -345,12 +378,16 @@ class NDimSim {
                 exit(1);
             }
 
+            // Fill in the mutation rates vector/IndexMap and print the
+            // probabilities we're using
             for (int j = 0; j < N_GENOTYPES; j++) {
                 mut_rates[i][j] = emp::from_string<double>(sliced_probs[j]);
                 std::cout << emp::from_string<double>(sliced_probs[j]) << " ";
             }
             std::cout << std::endl;
             
+            // Weights within each row have to sum to 1 because that's how
+            // probability works
             if (mut_rates[i].GetWeight() != 1) {
                 std::cout << "Error: Transition probabilities in row must sum to 1" << std::endl;
                 exit(1);
