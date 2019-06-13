@@ -23,7 +23,7 @@ CFLAGS_web_debug := $(CFLAGS_all) $(OFLAGS_web_debug) $(OFLAGS_web_all)
 default: nd
 native: nd
 # web: $(PROJECT).js
-all: 2d nd
+all: 1d nd
 
 debug:	CFLAGS_nat := $(CFLAGS_nat_debug)
 debug:	nd
@@ -36,8 +36,8 @@ debug:	nd
 nd:	$(PROJECT).cc $(PROJECT).h
 	$(CXX_nat) $(CFLAGS_nat) $(PROJECT).cc -o $(PROJECT)
 
-2d:	ABMtoFP_Evol.c
-	$(CXX_nat) ABMtoFP_Evol.c -o 2_dimensions
+1d:	ABMtoFP_Evol.c
+	$(CXX_nat) ABMtoFP_Evol.c -o 1_dimensions
 
 # $(PROJECT).js: source/web/$(PROJECT)-web.cc
 # 	$(CXX_web) $(CFLAGS_web) source/web/$(PROJECT)-web.cc -o web/$(PROJECT).js

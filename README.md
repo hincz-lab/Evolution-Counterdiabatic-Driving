@@ -10,14 +10,15 @@ First, clone this repository by executing the following command in a terminal:
 git clone https://github.com/Peyara/Evolution.git
 ```
 
-Currently, this repository contains a 2-dimensional
+Currently, this repository contains a 1-dimensional
 implementation of the model and the begginings of an
 n-dimensional model (in progress).
 
 The n-dimensional model has a dependency on the Empirical library. To run it, clone that as well:
 
 ```bash
-git clone https://github.com/devosoft/Empirical.git
+git clone https://github.com/emilydolson/Empirical.git
+git checkout memic_model # We're using a few features that haven't been merged into master yet
 ```
 
 Then go into the directory for this repository:
@@ -26,13 +27,13 @@ Then go into the directory for this repository:
 cd Evolution
 ```
 
-### 2-Dimensional Model
+### 1-Dimensional Model
 
-You can run the 2D model with the following commands:
+You can run the 1D model with the following commands:
 
 ```bash
-make 2d  # compile the code
-./2_dimensions  # run the code
+make 1d  # compile the code
+./1_dimension  # run the code
 ```
 
 You will be prompted to enter the number of generations
