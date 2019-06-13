@@ -12,20 +12,36 @@ EMP_BUILD_CONFIG( EvoConfig,
     VALUE(RANDOM_SEED, int, 0, "Random number seed (0 for based on time)"),
     VALUE(GENERATIONS, int, 10, "Number of generations to run for"),
     VALUE(N_GENOTYPES, int, 2, "Number of possible genotypes (must be >= 2)"),
-    VALUE(K, double, 1000, "Carrying capacity"),
+    VALUE(K, double, 10000, "Carrying capacity"),
     VALUE(DEATH_RATE, double, .05, "Death rate (d)"),
     VALUE(MAX_BIRTH_RATE, double, 2, "Maximum birth rate (b0)"),
 
     GROUP(PER_GENOTYPE_VALUES, "Per-genotype values"),
     VALUE(FITNESSES, std::string, "0,1", "Either a list of relative fitnesses, separated by commas, or a file containing them"),
+    VALUE(FITNESS_CHANGE_RULE, int, 0, "Rule governing how fitnesses should change. 0 = NONE, 1 = VAR, 2 = VARCD"),
     VALUE(INIT_POPS, std::string, "100,10", "Either a list of initial population sizes, separated by commas, or a file containing them"),
     VALUE(TRANSITION_PROBS, std::string, ".95,.05:.05,.95", 
         "Either a matrix of transition probabilities or a file containing one. Rows are original genotype, columns are new one. Use commas to separate values within rows. In files, use newlines between rows. On command-line, use colons.")
 )
 
-/*Heaviside Theta Function*/ 
-int H(double z){
-    return z>0;
+enum class FITNESS_CHANGE_RULES { NONE=0, VAR=1, VARCD=2};
+
+// Functions for changing s values over time
+// Written by Shamreen
+double sVarCD(double x) //Defining tanh based gen varying s function
+{
+  double s,ds,scd;
+  s=(double)(0.00075+0.00075*tanh((x-500.)/270.));
+  ds=0.00075/(270.*pow(cosh((x-500.)/270.),2.))/0.05;
+  scd=s+(ds/pow((pow((0.0008-s),2.)+4.*0.0004*s),0.5));
+  return scd;
+}
+
+double sVar(double x) //Defining tanh based gen varying s function
+{
+  double s;
+  s=(double)(0.00075+0.00075*tanh((x-500.)/270.));
+  return s;
 }
 
 // Functions for extracting parameter lists from files
@@ -60,6 +76,7 @@ class NDimSim {
     private:
     emp::Random rnd; // Random-number generator
     emp::DataFile pop_sizes; // For tracking pops over time
+    emp::DataFile pop_props; // For tracking genotype proportions of population over time
     int curr_gen = 0; // Current generation
 
     // Vectors to hold per-genotype values
@@ -76,11 +93,12 @@ class NDimSim {
     double DEATH_RATE;
     double MAX_BIRTH_RATE;
     std::string FITNESSES;
+    int FITNESS_CHANGE_RULE;
     std::string INIT_POPS;
     std::string TRANSITION_PROBS;
 
     public:
-    NDimSim(EvoConfig & config) : pop_sizes("pop_sizes.csv") {
+    NDimSim(EvoConfig & config) : pop_sizes("pop_sizes.csv"), pop_props("pop_props.csv") {
         Setup(config);
     }
 
@@ -94,6 +112,7 @@ class NDimSim {
         DEATH_RATE = config.DEATH_RATE();
         MAX_BIRTH_RATE = config.MAX_BIRTH_RATE();
         FITNESSES = config.FITNESSES();
+        FITNESS_CHANGE_RULE = config.FITNESS_CHANGE_RULE();
         INIT_POPS = config.INIT_POPS();
         TRANSITION_PROBS = config.TRANSITION_PROBS();
 
@@ -131,13 +150,17 @@ class NDimSim {
 
         // Set up data tracking
         pop_sizes.AddVar(curr_gen,"generation");
+        pop_props.AddVar(curr_gen,"generation");
         for (int i = 0; i < N_GENOTYPES; i++) {
             // Using a reference to vector contents is safe here
             // because vector size will never change
             pop_sizes.AddVar(current_pops[i],"pop" + emp::to_string(i));
+            pop_props.AddFun((std::function<double()>)[i, this](){return current_pops[i]/emp::Sum(current_pops);},"prop" + emp::to_string(i));
         }
         pop_sizes.PrintHeaderKeys();
         pop_sizes.SetTimingRepeat(1);
+        pop_props.PrintHeaderKeys();
+        pop_props.SetTimingRepeat(1);
 
 
     }
@@ -167,7 +190,32 @@ class NDimSim {
         return Birth()/(1 + rel_fitnesses[genotype]);
     }
 
+    void UpdateSs() {
+        switch(FITNESS_CHANGE_RULE) {
+            case (int)FITNESS_CHANGE_RULES::NONE:
+                return;
+                break;
+            case (int)FITNESS_CHANGE_RULES::VAR:
+                // This only really works for 1D right now
+                for (size_t i = 1; i < rel_fitnesses.size(); i++) {
+                    rel_fitnesses[i] = sVar(curr_gen);
+                    // std::cout << "S: " << rel_fitnesses[i] << std::endl;
+                }
+                break;
+            case (int)FITNESS_CHANGE_RULES::VARCD:
+                // This only really works for 1D right now
+                for (size_t i = 1; i < rel_fitnesses.size(); i++) {
+                    rel_fitnesses[i] = sVarCD(curr_gen);
+                }
+                break;
+            default:
+                std::cout << "Invalid fitness change rule. Defaulting to none." << std::endl;
+                break;
+        }
+    }
+
     void RunStep() {
+        UpdateSs();
         for (size_t i = 0; i < new_pops.size(); i++) {
             new_pops[i] = 0;
         }
@@ -179,9 +227,9 @@ class NDimSim {
             
             // Loop through all individuals of this genotype and figure out what happens to them
             for (int individual = 0; individual < current_pops[genotype]; individual++) {
-                
+
                 // Check if individual died
-                if (rnd.P(1 - DEATH_RATE)) {
+                if (rnd.GetDouble(1) - DEATH_RATE >= 0) {
                     new_pops[genotype]++; // Individual is still alive so we count it
 
                     // Check if indiviudal gives birth
@@ -189,9 +237,10 @@ class NDimSim {
                         // Select genotype of offsping based on transition probabilities
                         size_t new_genotype = mut_probs.Index(rnd.GetDouble(1));
                         new_pops[new_genotype]++;             
-                    }
-                }
+                    } else{rnd.GetDouble(1);} 
+                } else{rnd.GetDouble(1);rnd.GetDouble(1);}
             }
+
         }
 
         // Update current population sizes
@@ -200,13 +249,12 @@ class NDimSim {
     }
 
     void Run() {
-        for (int gen = 0; gen < GENERATIONS; gen++) {
+        for (int gen = 0; gen <= GENERATIONS; gen++) {
             curr_gen = gen;
             pop_sizes.Update(gen);
+            pop_props.Update(gen);
             RunStep();
         }
-        curr_gen = GENERATIONS; // So that time stamp in last line is correct
-        pop_sizes.Update(GENERATIONS); // Record final counts
     }
 
     void InitializeFitnesses() {

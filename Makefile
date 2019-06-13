@@ -37,7 +37,7 @@ nd:	$(PROJECT).cc $(PROJECT).h
 	$(CXX_nat) $(CFLAGS_nat) $(PROJECT).cc -o $(PROJECT)
 
 1d:	ABMtoFP_Evol.c
-	$(CXX_nat) ABMtoFP_Evol.c -o 1_dimensions
+	$(CXX_nat) ABMtoFP_Evol.c -o 1_dimension
 
 # $(PROJECT).js: source/web/$(PROJECT)-web.cc
 # 	$(CXX_web) $(CFLAGS_web) source/web/$(PROJECT)-web.cc -o web/$(PROJECT).js
