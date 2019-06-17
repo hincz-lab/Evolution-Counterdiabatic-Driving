@@ -19,6 +19,7 @@ EMP_BUILD_CONFIG( EvoConfig,
     GROUP(PER_GENOTYPE_VALUES, "Per-genotype values"),
     VALUE(FITNESSES, std::string, "0,1", "Either a list of relative fitnesses, separated by commas, or a file containing them"),
     VALUE(FITNESS_CHANGE_RULE, int, 0, "Rule governing how fitnesses should change. 0 = NONE, 1 = VAR, 2 = VARCD"),
+    VALUE(GENOTYPE_TO_STEER, int, 0, "For fitness change rules that only apply to one genotype (currently all of them), which genotype should be changed?"),    
     VALUE(INIT_POPS, std::string, "100,10", "Either a list of initial population sizes, separated by commas, or a file containing them"),
     VALUE(TRANSITION_PROBS, std::string, ".95,.05:.05,.95", 
         "Either a matrix of transition probabilities or a file containing one. Rows are original genotype, columns are new one. Use commas to separate values within rows. In files, use newlines between rows. On command-line, use colons.")
@@ -30,9 +31,10 @@ enum class FITNESS_CHANGE_RULES { NONE=0, VAR=1, VARCD=2};
 // Written by Shamreen
 
 // Defining tanh based gen varying s function
-double sVarCD(double x)
+double sVarCD(double x, double s)
 {
-  double s,ds,scd;
+//   double s;
+  double ds,scd;
   s=(double)(0.00075+0.00075*tanh((x-500.)/270.));
   ds=0.00075/(270.*pow(cosh((x-500.)/270.),2.))/0.05;
   scd=s+(ds/pow((pow((0.0008-s),2.)+4.*0.0004*s),0.5));
@@ -40,9 +42,9 @@ double sVarCD(double x)
 }
 
 // Defining tanh based gen varying s function
-double sVar(double x)
+double sVar(double x, double s)
 {
-  double s;
+//   double s;
   s=(double)(0.00075+0.00075*tanh((x-500.)/270.));
   return s;
 }
@@ -101,6 +103,7 @@ class NDimSim {
     double MAX_BIRTH_RATE;
     std::string FITNESSES;
     int FITNESS_CHANGE_RULE;
+    int GENOTYPE_TO_STEER;
     std::string INIT_POPS;
     std::string TRANSITION_PROBS;
 
@@ -121,6 +124,7 @@ class NDimSim {
         MAX_BIRTH_RATE = config.MAX_BIRTH_RATE();
         FITNESSES = config.FITNESSES();
         FITNESS_CHANGE_RULE = config.FITNESS_CHANGE_RULE();
+        GENOTYPE_TO_STEER = config.GENOTYPE_TO_STEER();
         INIT_POPS = config.INIT_POPS();
         TRANSITION_PROBS = config.TRANSITION_PROBS();
 
@@ -206,15 +210,11 @@ class NDimSim {
                 break;
             case (int)FITNESS_CHANGE_RULES::VAR:
                 // This only really works for 1D right now
-                for (size_t i = 1; i < rel_fitnesses.size(); i++) {
-                    rel_fitnesses[i] = sVar(curr_gen);
-                }
+                rel_fitnesses[GENOTYPE_TO_STEER] = sVar(curr_gen, rel_fitnesses[GENOTYPE_TO_STEER]);
                 break;
             case (int)FITNESS_CHANGE_RULES::VARCD:
                 // This only really works for 1D right now
-                for (size_t i = 1; i < rel_fitnesses.size(); i++) {
-                    rel_fitnesses[i] = sVarCD(curr_gen);
-                }
+                rel_fitnesses[GENOTYPE_TO_STEER] = sVarCD(curr_gen, rel_fitnesses[GENOTYPE_TO_STEER]);
                 break;
             default:
                 std::cout << "Invalid fitness change rule. Defaulting to none." << std::endl;
@@ -235,7 +235,6 @@ class NDimSim {
         for (int genotype = 0; genotype < N_GENOTYPES; genotype++) {
             // Store reference to current probability map, for simplicity
             emp::IndexMap & mut_probs = mut_rates[genotype];
-            emp_assert(mut_probs.GetWeight() == 1 && "Mutation probabilities should sum to 1");
             
             // Loop through all individuals of this genotype and figure out what happens to them
             for (int individual = 0; individual < current_pops[genotype]; individual++) {
@@ -282,25 +281,12 @@ class NDimSim {
 
         // There should be N_GENOTYPES fitness values
         if ((int)sliced_fits.size() != N_GENOTYPES) {
-            if ((int)sliced_fits.size() == N_GENOTYPES - 1) {
-                // It's easy to forget to provide a fitness for the
-                // focal genotype, and it's always 0, so we'll assume
-                // that's what happened and fill it in.
-                sliced_fits.insert(sliced_fits.begin(),"0"); 
-            } else {
-                // If there are a different number of fitnesses, then
-                // there's really nothing we can do
-                std::cout << "Error: Not enough fitnesses supplied." << 
-                    " Attempting to assign " << sliced_fits.size() << 
-                    " to " << N_GENOTYPES << " genotypes." << std::endl;
-                exit(1);
-            }
-        }
-
-        // The focal genotype needs to have a relative fitness of 0.
-        // I assume math stuff will break if this condition is not met.
-        if (sliced_fits[0] != "0") {
-            std::cout << "Warning: Relative fitness of focal genotype is not 0" << std::endl;
+            // If there are a different number of fitnesses, then
+            // there's really nothing we can do
+            std::cout << "Error: Not enough fitnesses supplied." << 
+                " Attempting to assign " << sliced_fits.size() << 
+                " to " << N_GENOTYPES << " genotypes." << std::endl;
+            exit(1);
         }
 
         // Put the relative fitnesses we're using in the correct vector
@@ -308,7 +294,7 @@ class NDimSim {
         std::cout << "Relative fitnesses: " << std::endl;
         for (int i = 0; i < N_GENOTYPES; i++) {
             rel_fitnesses[i] = emp::from_string<double>(sliced_fits[i]);
-            std::cout << i << ": " << rel_fitnesses[i] << std::endl;
+            std::cout << i << ": " << rel_fitnesses[i]  << " " << Birth(i) << std::endl;
         }
         std::cout << std::endl;
     }
@@ -388,8 +374,8 @@ class NDimSim {
             
             // Weights within each row have to sum to 1 because that's how
             // probability works
-            if (mut_rates[i].GetWeight() != 1) {
-                std::cout << "Error: Transition probabilities in row must sum to 1" << std::endl;
+            if (abs(mut_rates[i].GetWeight() - 1) > .00000001) {
+                std::cout << "Error: Transition probabilities in row must sum to 1. Sum is " << mut_rates[i].GetWeight() << std::endl;
                 exit(1);
             }
         }
