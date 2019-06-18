@@ -1,0 +1,42 @@
+---
+title: ''
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(readr)
+
+theme_set(theme_classic())
+```
+
+# Setup
+
+
+```{r}
+pop_sizes <- read_csv("../pop_sizes.csv")
+colnames(pop_sizes) <- c("Generation", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15")
+```
+
+## Graph changes over time
+
+```{r}
+tidy_sizes <- gather(pop_sizes, key = "Population", value="N", -Generation)
+ggplot(data=tidy_sizes %>% filter(Generation %% 10 == 0), aes(x=Generation, y=N, color=Population)) + geom_line()
+
+```
+
+
+## Equation fitting
+
+```{r}
+xs <- pop_sizes$`3` / (pop_sizes$`3` + pop_sizes$`7`)
+xs_total <- pop_sizes$`3` / (pop_sizes$`0`+pop_sizes$`1`+pop_sizes$`2`+pop_sizes$`3`+pop_sizes$`4`+pop_sizes$`5`+pop_sizes$`6`+pop_sizes$`7`+pop_sizes$`8`+pop_sizes$`9`+pop_sizes$`10`+pop_sizes$`11`+pop_sizes$`12`+pop_sizes$`13`+pop_sizes$`14`+pop_sizes$`15`)
+
+
+delta_xs <- lag(xs) - xs
+delta_xs_total <- lag(xs_total) - xs_total
+```
