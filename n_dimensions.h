@@ -19,7 +19,7 @@ EMP_BUILD_CONFIG( EvoConfig,
     GROUP(PER_GENOTYPE_VALUES, "Per-genotype values"),
     VALUE(FITNESSES, std::string, "0,1", "Either a list of relative fitnesses, separated by commas, or a file containing them"),
     VALUE(FITNESS_CHANGE_RULE, int, 0, "Rule governing how fitnesses should change. 0 = NONE, 1 = VAR, 2 = VARCD"),
-    VALUE(GENOTYPE_TO_STEER, int, 0, "For fitness change rules that only apply to one genotype (currently all of them), which genotype should be changed?"),    
+    VALUE(GENOTYPE_TO_SPEED_CONTROL, int, 0, "For fitness change rules that only apply to one genotype (currently all of them), which genotype should be changed?"),    
     VALUE(INIT_POPS, std::string, "100,10", "Either a list of initial population sizes, separated by commas, or a file containing them"),
     VALUE(TRANSITION_PROBS, std::string, ".95,.05:.05,.95", 
         "Either a matrix of transition probabilities or a file containing one. Rows are original genotype, columns are new one. Use commas to separate values within rows. In files, use newlines between rows. On command-line, use colons.")
@@ -103,7 +103,7 @@ class NDimSim {
     double MAX_BIRTH_RATE;
     std::string FITNESSES;
     int FITNESS_CHANGE_RULE;
-    int GENOTYPE_TO_STEER;
+    int GENOTYPE_TO_SPEED_CONTROL;
     std::string INIT_POPS;
     std::string TRANSITION_PROBS;
 
@@ -124,7 +124,7 @@ class NDimSim {
         MAX_BIRTH_RATE = config.MAX_BIRTH_RATE();
         FITNESSES = config.FITNESSES();
         FITNESS_CHANGE_RULE = config.FITNESS_CHANGE_RULE();
-        GENOTYPE_TO_STEER = config.GENOTYPE_TO_STEER();
+        GENOTYPE_TO_SPEED_CONTROL = config.GENOTYPE_TO_SPEED_CONTROL();
         INIT_POPS = config.INIT_POPS();
         TRANSITION_PROBS = config.TRANSITION_PROBS();
 
@@ -210,11 +210,11 @@ class NDimSim {
                 break;
             case (int)FITNESS_CHANGE_RULES::VAR:
                 // This only really works for 1D right now
-                rel_fitnesses[GENOTYPE_TO_STEER] = sVar(curr_gen, rel_fitnesses[GENOTYPE_TO_STEER]);
+                rel_fitnesses[GENOTYPE_TO_SPEED_CONTROL] = sVar(curr_gen, rel_fitnesses[GENOTYPE_TO_SPEED_CONTROL]);
                 break;
             case (int)FITNESS_CHANGE_RULES::VARCD:
                 // This only really works for 1D right now
-                rel_fitnesses[GENOTYPE_TO_STEER] = sVarCD(curr_gen, rel_fitnesses[GENOTYPE_TO_STEER]);
+                rel_fitnesses[GENOTYPE_TO_SPEED_CONTROL] = sVarCD(curr_gen, rel_fitnesses[GENOTYPE_TO_SPEED_CONTROL]);
                 break;
             default:
                 std::cout << "Invalid fitness change rule. Defaulting to none." << std::endl;
