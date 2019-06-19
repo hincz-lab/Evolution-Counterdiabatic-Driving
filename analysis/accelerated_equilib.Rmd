@@ -33,10 +33,46 @@ ggplot(data=tidy_sizes %>% filter(Generation %% 10 == 0), aes(x=Generation, y=N,
 ## Equation fitting
 
 ```{r}
+
+bincount <- 20
+
+# Calculate x values by both methods (A/(A+B) and A/total_population)
 xs <- pop_sizes$`3` / (pop_sizes$`3` + pop_sizes$`7`)
 xs_total <- pop_sizes$`3` / (pop_sizes$`0`+pop_sizes$`1`+pop_sizes$`2`+pop_sizes$`3`+pop_sizes$`4`+pop_sizes$`5`+pop_sizes$`6`+pop_sizes$`7`+pop_sizes$`8`+pop_sizes$`9`+pop_sizes$`10`+pop_sizes$`11`+pop_sizes$`12`+pop_sizes$`13`+pop_sizes$`14`+pop_sizes$`15`)
 
-
+# Calculate deltas
 delta_xs <- lag(xs) - xs
 delta_xs_total <- lag(xs_total) - xs_total
+
+# Calculate diffusivity and fit equations
+
+# Start with first method of calculating x
+x_df <- data.frame(x=xs, dx=delta_xs)
+# Bin data
+x_df$bin <- cut(x_df$x, breaks=pretty(x_df$x,bincount), labels = head(pretty(x_df$x, bincount), -1) + 1/(2*bincount))
+# Label bins with numeric values
+x_df <- x_df %>% mutate(xbin = as.numeric(levels(bin))[bin])
+
+# Calculate diffusivity stuff per bin
+summ_x_df <- x_df %>% drop_na() %>% group_by(xbin) %>% summarise(sq_mean_dx = mean(dx)**2, mean_sq_dx=mean(dx**2)) %>% mutate(deff=(mean_sq_dx-sq_mean_dx)/2)
+# Fit model
+m <- nls(deff~((xbin-xmin) * (xmax-xbin))/2*N, data=summ_x_df, start = list(xmin=.0, xmax=1, N=4000), lower = c(0,max(summ_x_total_df$xbin),0), upper = c(min(summ_x_total_df$xbin), 1, 10000), algorithm = "port")
+# Plot data and model
+ggplot(data=summ_x_df, aes(x=xbin, y=deff)) + stat_summary(fun.data="median_hilow", geom="crossbar") + geom_line(aes(y=(predict(m))))
+
+
+# Now try with other method of calculating x
+x_total_df <- data.frame(x=xs_total, dx=delta_xs_total)
+# Bin data
+x_total_df$bin <- cut(x_total_df$x, breaks=pretty(x_total_df$x,bincount), labels = head(pretty(x_total_df$x, bincount), -1) + 1/(2*bincount))
+# Label bins with numeric values
+x_total_df <- x_total_df %>% mutate(xbin = as.numeric(levels(bin))[bin])
+
+# Calculate diffusivity stuff per bin
+summ_x_total_df <- x_total_df %>% drop_na() %>% group_by(xbin) %>% summarise(sq_mean_dx = mean(dx)**2, mean_sq_dx=mean(dx**2)) %>% mutate(deff=(mean_sq_dx-sq_mean_dx)/2)
+# Fit model
+m <- nls(deff~((xbin-xmin) * (xmax-xbin))/2*N, data=summ_x_total_df, start = list(xmin=.0, xmax=1, N=4000), lower = c(0,max(summ_x_total_df$xbin),0), upper = c(min(summ_x_total_df$xbin), 1, 10000), algorithm = "port")
+# Plot data and model
+ggplot(data=summ_x_total_df, aes(x=xbin, y=deff)) + stat_summary(fun.data="median_hilow", geom="crossbar") + geom_line(aes(y=(predict(m))))
+
 ```
