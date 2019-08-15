@@ -12,7 +12,7 @@ CFLAGS_nat_debug := -g $(CFLAGS_all)
 
 # Emscripten compiler information
 CXX_web := emcc
-OFLAGS_web_all := -s "EXTRA_EXPORTED_RUNTIME_METHODS=['ccall', 'cwrap']" -s TOTAL_MEMORY=67108864 --js-library $(EMP_DIR)/web/library_emp.js -s EXPORTED_FUNCTIONS="['_main', '_empCppCallback']" -s DISABLE_EXCEPTION_CATCHING=1 -s NO_EXIT_RUNTIME=1 #--embed-file configs
+OFLAGS_web_all := -s "EXTRA_EXPORTED_RUNTIME_METHODS=['ccall', 'cwrap', 'writeStringToMemory']" -s TOTAL_MEMORY=67108864 --js-library $(EMP_DIR)/web/library_emp.js --js-library $(EMP_DIR)/web/d3/library_d3.js -s EXPORTED_FUNCTIONS="['_main', '_empCppCallback']" -s DISABLE_EXCEPTION_CATCHING=1 -s NO_EXIT_RUNTIME=1 #--embed-file configs
 OFLAGS_web := -Oz -DNDEBUG
 OFLAGS_web_debug := -g4 -Oz -pedantic -Wno-dollar-in-identifier-extension
 
@@ -22,8 +22,8 @@ CFLAGS_web_debug := $(CFLAGS_all) $(OFLAGS_web_debug) $(OFLAGS_web_all)
 
 default: nd
 native: nd
-# web: $(PROJECT).js
-all: 1d nd
+web: n_dimensions.js
+all: 1d nd n_dimensions.js
 
 debug:	CFLAGS_nat := $(CFLAGS_nat_debug)
 debug:	nd
@@ -39,11 +39,11 @@ nd:	$(PROJECT).cc $(PROJECT).h
 1d:	ABMtoFP_Evol.c
 	$(CXX_nat) ABMtoFP_Evol.c -o 1_dimension
 
-# $(PROJECT).js: source/web/$(PROJECT)-web.cc
-# 	$(CXX_web) $(CFLAGS_web) source/web/$(PROJECT)-web.cc -o web/$(PROJECT).js
+n_dimensions.js: n_dimensions_web.cc
+	$(CXX_web) $(CFLAGS_web) n_dimensions_web.cc -o web/n_dimensions.js
 
 clean:
-	rm -f $(PROJECT) web/$(PROJECT).js web/*.js.map web/*.js.map *~ *.o
+	rm -f $(PROJECT) web/n_dimensions.js web/*.js.map web/*.js.map *~ *.o
 
 # Debugging information
 print-%: ; @echo '$(subst ','\'',$*=$($*))'

@@ -268,6 +268,8 @@ class NDimSim {
         }
     }
 
+    emp::vector<emp::IndexMap> GetMutRates() {return mut_rates;}
+
     // Pull fitness values out of config parameter and put them in the
     // appropriate vector, giveing warnings and errors as neccessary.
     void InitializeFitnesses() {
