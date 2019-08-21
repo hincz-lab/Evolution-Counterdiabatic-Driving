@@ -17,19 +17,26 @@ EMP_BUILD_CONFIG( EvoConfig,
     VALUE(MAX_BIRTH_RATE, double, 2, "Maximum birth rate (b0)"),
 
     GROUP(PER_GENOTYPE_VALUES, "Per-genotype values"),
-    VALUE(FITNESSES, std::string, "0,1", "Either a list of relative fitnesses, separated by commas, or a file containing them"),
-    VALUE(FITNESS_CHANGE_RULE, int, 0, "Rule governing how fitnesses should change. 0 = NONE, 1 = VAR, 2 = VARCD"),
-    VALUE(GENOTYPE_TO_SPEED_CONTROL, int, 0, "For fitness change rules that only apply to one genotype (currently all of them), which genotype should be changed?"),    
+    VALUE(FITNESSES, std::string, "0,1", "Either a list of relative fitnesses, separated by commas, or a file containing them. These are the starting ftnesses. In the case of environments simulating drugs, they are the fitnesses in the absence of drug."),
+    VALUE(FITNESS_CHANGE_RULE, int, 0, "Rule governing how fitnesses should change. 0 = NONE, 1 = VAR, 2 = VARCD, 3 = Drug with increasing dose"),
+    VALUE(GENOTYPE_TO_DRIVE, int, 0, "For fitness change rules that only apply to one genotype (currently all of them), which genotype should be changed?"),    
+    VALUE(IC50S, std::string, "-6.0,-5.0", "For environments simulating the application of a drug, what are the IC50 values for each genotype? Specify as list of values or name of file containing them."),
+    VALUE(CS, std::string, "1,1", "Constants describing the shape of the hill functions relating dose to fitness for each genotype."),
     VALUE(INIT_POPS, std::string, "100,10", "Either a list of initial population sizes, separated by commas, or a file containing them"),
     VALUE(TRANSITION_PROBS, std::string, ".95,.05:.05,.95", 
         "Either a matrix of transition probabilities or a file containing one. Rows are original genotype, columns are new one. Use commas to separate values within rows. In files, use newlines between rows. On command-line, use colons.")
 )
 
-enum class FITNESS_CHANGE_RULES { NONE=0, VAR=1, VARCD=2};
+enum class FITNESS_CHANGE_RULES { NONE=0, VAR=1, VARCD=2, INCREASING_DRUG=3};
 
 // Functions for changing s values over time
-// Written by Shamreen
 
+double sDrugIncrease(double t, double g_drugless, double c, double IC50) {
+    double concentration = tanh(t/500000)*10000;
+    return g_drugless/(1 + exp((IC50 - concentration)/c));
+}
+
+// The following two functions were written by Shamreen Iram
 // Defining tanh based gen varying s function
 double sVarCD(double x, double s)
 {
@@ -95,6 +102,11 @@ class NDimSim {
     emp::vector<double> new_pops;
     emp::vector<emp::IndexMap> mut_rates;
 
+    // Drug environment specific per-genotypes values
+    emp::vector<double> drugless_fitnesses;
+    emp::vector<double> cs;
+    emp::vector<double> IC50s;
+
     // Localized config parameters
     int N_GENOTYPES;
     int GENERATIONS;
@@ -103,9 +115,11 @@ class NDimSim {
     double MAX_BIRTH_RATE;
     std::string FITNESSES;
     int FITNESS_CHANGE_RULE;
-    int GENOTYPE_TO_SPEED_CONTROL;
+    int GENOTYPE_TO_DRIVE;
     std::string INIT_POPS;
     std::string TRANSITION_PROBS;
+    std::string IC50S;
+    std::string CS;
 
     public:
     NDimSim(EvoConfig & config) : pop_sizes("pop_sizes.csv"), pop_props("pop_props.csv") {
@@ -124,20 +138,26 @@ class NDimSim {
         MAX_BIRTH_RATE = config.MAX_BIRTH_RATE();
         FITNESSES = config.FITNESSES();
         FITNESS_CHANGE_RULE = config.FITNESS_CHANGE_RULE();
-        GENOTYPE_TO_SPEED_CONTROL = config.GENOTYPE_TO_SPEED_CONTROL();
+        GENOTYPE_TO_DRIVE = config.GENOTYPE_TO_DRIVE();
         INIT_POPS = config.INIT_POPS();
         TRANSITION_PROBS = config.TRANSITION_PROBS();
+        IC50S = config.IC50S();
+        CS = config.CS();        
 
         // Set-up per-genotype values
 
         // Fitnesses (s in the equation) are relative to first genotype 
         // The first genotype's s will be 0
-        rel_fitnesses.resize(N_GENOTYPES);
         InitializeFitnesses();
 
         // Initial population sizes of each genotype
-        init_pops.resize(N_GENOTYPES);
         InitializeInitPops();
+
+        // Initialize IC50 values for each genotype
+        InitializeIC50s();
+
+        // Initialize c values for each genotype
+        InitializeCs();
 
         // Current population sizes of each genotype
         current_pops = init_pops;
@@ -210,11 +230,16 @@ class NDimSim {
                 break;
             case (int)FITNESS_CHANGE_RULES::VAR:
                 // This only really works for 1D right now
-                rel_fitnesses[GENOTYPE_TO_SPEED_CONTROL] = sVar(curr_gen, rel_fitnesses[GENOTYPE_TO_SPEED_CONTROL]);
+                rel_fitnesses[GENOTYPE_TO_DRIVE] = sVar(curr_gen, rel_fitnesses[GENOTYPE_TO_DRIVE]);
                 break;
             case (int)FITNESS_CHANGE_RULES::VARCD:
                 // This only really works for 1D right now
-                rel_fitnesses[GENOTYPE_TO_SPEED_CONTROL] = sVarCD(curr_gen, rel_fitnesses[GENOTYPE_TO_SPEED_CONTROL]);
+                rel_fitnesses[GENOTYPE_TO_DRIVE] = sVarCD(curr_gen, rel_fitnesses[GENOTYPE_TO_DRIVE]);
+                break;
+            case (int)FITNESS_CHANGE_RULES::INCREASING_DRUG:
+                for (int genotype = 0; genotype < N_GENOTYPES; genotype++) {
+                    rel_fitnesses[genotype] = sDrugIncrease(curr_gen, drugless_fitnesses[genotype], cs[genotype], IC50s[genotype]);
+                }
                 break;
             default:
                 std::cout << "Invalid fitness change rule. Defaulting to none." << std::endl;
@@ -270,63 +295,62 @@ class NDimSim {
 
     emp::vector<emp::IndexMap> GetMutRates() {return mut_rates;}
 
-    // Pull fitness values out of config parameter and put them in the
-    // appropriate vector, giveing warnings and errors as neccessary.
-    void InitializeFitnesses() {
-        if (emp::has_letter(FITNESSES)) {
-            // FITNESSES is a file
-            FITNESSES = ExtractStringFromOneLineFile(FITNESSES, "fitness");
+    emp::vector<double> ExtractVectorFromConfig(std::string param, std::string name, std::string plural) {
+        emp::vector<double> result(N_GENOTYPES);
+
+        if (emp::has_letter(param)) {
+            // param is a file
+            param = ExtractStringFromOneLineFile(param, name);
         }
 
         // Split string up into smaller strings that contain individual values
-        emp::vector<std::string> sliced_fits = emp::slice(FITNESSES, ',');
+        emp::vector<std::string> sliced_param = emp::slice(param, ',');
 
-        // There should be N_GENOTYPES fitness values
-        if ((int)sliced_fits.size() != N_GENOTYPES) {
-            // If there are a different number of fitnesses, then
+        // There should be N_GENOTYPES values
+        if ((int)sliced_param.size() != N_GENOTYPES) {
+            // If there are a different number of then
             // there's really nothing we can do
-            std::cout << "Error: Not enough fitnesses supplied." << 
-                " Attempting to assign " << sliced_fits.size() << 
+            std::cout << "Error: Not enough " << plural << "supplied." << 
+                " Attempting to assign " << sliced_param.size() << 
                 " to " << N_GENOTYPES << " genotypes." << std::endl;
             exit(1);
         }
 
-        // Put the relative fitnesses we're using in the correct vector
+        // Put the values we're using in the correct vector
         // and print them out
-        std::cout << "Relative fitnesses: " << std::endl;
+        std::cout << plural << ": " << std::endl;
         for (int i = 0; i < N_GENOTYPES; i++) {
-            rel_fitnesses[i] = emp::from_string<double>(sliced_fits[i]);
-            std::cout << i << ": " << rel_fitnesses[i]  << " " << Birth(i) << std::endl;
+            result[i] = emp::from_string<double>(sliced_param[i]);
+            std::cout << i << ": " << result[i]  << " " << std::endl;
         }
         std::cout << std::endl;
+        return result;
+    }
+
+    // Pull fitness values out of config parameter and put them in the
+    // appropriate vector, giveing warnings and errors as neccessary.
+    void InitializeFitnesses() {
+
+        rel_fitnesses = ExtractVectorFromConfig(FITNESSES, "fitness", "fitnesses");
+        drugless_fitnesses = rel_fitnesses;
     }
 
     // Pull initial population values out of config parameter and put them in the
     // appropriate vector, giveing warnings and errors as neccessary.
     void InitializeInitPops() {
-        if (emp::has_letter(INIT_POPS)) {
-            // INIT_POPS is a filename
-            INIT_POPS = ExtractStringFromOneLineFile(INIT_POPS, "initial population");
-        }
+        init_pops = ExtractVectorFromConfig(INIT_POPS, "initial population", "initial populations");
+    }
 
-        emp::vector<std::string> sliced_pops = emp::slice(INIT_POPS, ',');
+    // Pull IC50 values out of config parameter and put them in the
+    // appropriate vector, giveing warnings and errors as neccessary.
+    void InitializeIC50s() {
+        IC50s = ExtractVectorFromConfig(IC50S, "IC50", "IC50s");
+    }
 
-        // Need a population size for each genotype
-        if ((int)sliced_pops.size() != N_GENOTYPES) {
-            std::cout << "Error: Not enough initial population sizes supplied." << 
-                " Attempting to assign " << sliced_pops.size() << 
-                " to " << N_GENOTYPES << " genotypes." << std::endl;
-            exit(1);
-        }
-
-        // Put the initial population sizes we're using in the correct vector
-        // and print them out
-        std::cout << "Initial populations: " << std::endl;
-        for (int i = 0; i < N_GENOTYPES; i++) {
-            init_pops[i] = emp::from_string<double>(sliced_pops[i]);
-            std::cout << i << ": " << init_pops[i] << std::endl;
-        }
-        std::cout << std::endl;
+    // Pull c values out of config parameter and put them in the
+    // appropriate vector, giveing warnings and errors as neccessary.
+    void InitializeCs() {
+        cs = ExtractVectorFromConfig(CS, "C", "Cs");
     }
 
     // Pull transition probabilities out of config parameter and put them in the
