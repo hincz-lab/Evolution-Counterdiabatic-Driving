@@ -3,8 +3,9 @@
 int main(int argc, char* argv[])
 {
     EvoConfig config;
+    config.Read("NDim.cfg");
     auto args = emp::cl::ArgManager(argc, argv);
-    if (args.ProcessConfigOptions(config, std::cout, "MemicConfig.cfg", "Memic-macros.h") == false) exit(0);
+    if (args.ProcessConfigOptions(config, std::cout, "NDim.cfg", "NDim-macros.h") == false) exit(0);
     if (args.TestUnknown() == false) exit(0);  // If there are leftover args, throw an error.
 
     // Write to screen how the experiment is configured

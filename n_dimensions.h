@@ -17,10 +17,11 @@ EMP_BUILD_CONFIG( EvoConfig,
     VALUE(MAX_BIRTH_RATE, double, 2, "Maximum birth rate (b0)"),
 
     GROUP(PER_GENOTYPE_VALUES, "Per-genotype values"),
-    VALUE(FITNESSES, std::string, "0,1", "Either a list of relative fitnesses, separated by commas, or a file containing them. These are the starting ftnesses. In the case of environments simulating drugs, they are the fitnesses in the absence of drug."),
+    VALUE(FITNESSES, std::string, "0,1", "Either a list of relative fitnesses, separated by commas, or a file containing them. These are the starting ftnesses."),
     VALUE(FITNESS_CHANGE_RULE, int, 0, "Rule governing how fitnesses should change. 0 = NONE, 1 = VAR, 2 = VARCD, 3 = Drug with increasing dose"),
     VALUE(GENOTYPE_TO_DRIVE, int, 0, "For fitness change rules that only apply to one genotype (currently all of them), which genotype should be changed?"),    
     VALUE(IC50S, std::string, "-6.0,-5.0", "For environments simulating the application of a drug, what are the IC50 values for each genotype? Specify as list of values or name of file containing them."),
+    VALUE(G_DRUGLESSES, std::string, "1,1", "For environments simulating the application of a drug, what are the growth rates in absence of the drug? Specify as list of values or name of file containing them."),
     VALUE(CS, std::string, "1,1", "Constants describing the shape of the hill functions relating dose to fitness for each genotype."),
     VALUE(INIT_POPS, std::string, "100,10", "Either a list of initial population sizes, separated by commas, or a file containing them"),
     VALUE(TRANSITION_PROBS, std::string, ".95,.05:.05,.95", 
@@ -28,33 +29,6 @@ EMP_BUILD_CONFIG( EvoConfig,
 )
 
 enum class FITNESS_CHANGE_RULES { NONE=0, VAR=1, VARCD=2, INCREASING_DRUG=3};
-
-// Functions for changing s values over time
-
-double sDrugIncrease(double t, double g_drugless, double c, double IC50) {
-    double concentration = tanh(t/500000)*10000;
-    return g_drugless/(1 + exp((IC50 - concentration)/c));
-}
-
-// The following two functions were written by Shamreen Iram
-// Defining tanh based gen varying s function
-double sVarCD(double x, double s)
-{
-//   double s;
-  double ds,scd;
-  s=(double)(0.00075+0.00075*tanh((x-500.)/270.));
-  ds=0.00075/(270.*pow(cosh((x-500.)/270.),2.))/0.05;
-  scd=s+(ds/pow((pow((0.0008-s),2.)+4.*0.0004*s),0.5));
-  return scd;
-}
-
-// Defining tanh based gen varying s function
-double sVar(double x, double s)
-{
-//   double s;
-  s=(double)(0.00075+0.00075*tanh((x-500.)/270.));
-  return s;
-}
 
 // Functions for extracting parameter lists from files
 
@@ -106,6 +80,7 @@ class NDimSim {
     emp::vector<double> drugless_fitnesses;
     emp::vector<double> cs;
     emp::vector<double> IC50s;
+    double max_fit;
 
     // Localized config parameters
     int N_GENOTYPES;
@@ -120,6 +95,7 @@ class NDimSim {
     std::string TRANSITION_PROBS;
     std::string IC50S;
     std::string CS;
+    std::string G_DRUGLESSES;
 
     public:
     NDimSim(EvoConfig & config) : pop_sizes("pop_sizes.csv"), pop_props("pop_props.csv") {
@@ -143,6 +119,7 @@ class NDimSim {
         TRANSITION_PROBS = config.TRANSITION_PROBS();
         IC50S = config.IC50S();
         CS = config.CS();        
+        G_DRUGLESSES = config.G_DRUGLESSES();        
 
         // Set-up per-genotype values
 
@@ -155,6 +132,9 @@ class NDimSim {
 
         // Initialize IC50 values for each genotype
         InitializeIC50s();
+
+        // Initialize frugless growth rates for each genotype
+        InitializeGDruglesses();
 
         // Initialize c values for each genotype
         InitializeCs();
@@ -213,7 +193,7 @@ class NDimSim {
         return m; 
     }
 
-    /* Birth rate of other genotypes (get's called for 
+    /* Birth rate of other genotypes (gets called for 
     all genotypes, but will not modify the value returned
     by Birth() for the focal genotype because its relative
     fitness will be 0) */
@@ -240,6 +220,7 @@ class NDimSim {
                 for (int genotype = 0; genotype < N_GENOTYPES; genotype++) {
                     rel_fitnesses[genotype] = sDrugIncrease(curr_gen, drugless_fitnesses[genotype], cs[genotype], IC50s[genotype]);
                 }
+                std::cout << emp::to_string(rel_fitnesses) << std::endl;
                 break;
             default:
                 std::cout << "Invalid fitness change rule. Defaulting to none." << std::endl;
@@ -293,6 +274,39 @@ class NDimSim {
         }
     }
 
+
+    // Methods for changing s values over time
+
+    double sDrugIncrease(double t, double g_drugless, double c, double IC50) {
+        // This function ramps up over 2M generations
+        // double concentration = tanh(t/500000)*10000;
+        
+        // This one ramps up over 100 generations
+        double concentration = exp(t/10.85);
+        std::cout << concentration << " " << (IC50 - concentration) <<std::endl;
+        return max_fit/(g_drugless/(1 + exp((IC50 - concentration)/c))) - 1;
+    }
+
+    // The following two functions were written by Shamreen Iram
+    // Defining tanh based gen varying s function
+    double sVarCD(double x, double s)
+    {
+    //   double s;
+    double ds,scd;
+    s=(double)(0.00075+0.00075*tanh((x-500.)/270.));
+    ds=0.00075/(270.*pow(cosh((x-500.)/270.),2.))/0.05;
+    scd=s+(ds/pow((pow((0.0008-s),2.)+4.*0.0004*s),0.5));
+    return scd;
+    }
+
+    // Defining tanh based gen varying s function
+    double sVar(double x, double s)
+    {
+    //   double s;
+    s=(double)(0.00075+0.00075*tanh((x-500.)/270.));
+    return s;
+    }
+
     emp::vector<emp::IndexMap> GetMutRates() {return mut_rates;}
 
     emp::vector<double> ExtractVectorFromConfig(std::string param, std::string name, std::string plural) {
@@ -330,9 +344,7 @@ class NDimSim {
     // Pull fitness values out of config parameter and put them in the
     // appropriate vector, giveing warnings and errors as neccessary.
     void InitializeFitnesses() {
-
         rel_fitnesses = ExtractVectorFromConfig(FITNESSES, "fitness", "fitnesses");
-        drugless_fitnesses = rel_fitnesses;
     }
 
     // Pull initial population values out of config parameter and put them in the
@@ -345,6 +357,13 @@ class NDimSim {
     // appropriate vector, giveing warnings and errors as neccessary.
     void InitializeIC50s() {
         IC50s = ExtractVectorFromConfig(IC50S, "IC50", "IC50s");
+    }
+
+    // Pull drugless growth rates out of config parameter and put them in the
+    // appropriate vector, giveing warnings and errors as neccessary.
+    void InitializeGDruglesses() {
+        drugless_fitnesses = ExtractVectorFromConfig(G_DRUGLESSES, "g_drugless", "g_druglesses");
+        max_fit = emp::FindMax(drugless_fitnesses);
     }
 
     // Pull c values out of config parameter and put them in the
