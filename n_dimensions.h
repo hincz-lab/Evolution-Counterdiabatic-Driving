@@ -70,17 +70,17 @@ class NDimSim {
     int curr_gen = 0; // Current generation
 
     // Vectors to hold per-genotype values
-    emp::vector<double> rel_fitnesses;
-    emp::vector<double> init_pops;
-    emp::vector<double> current_pops;
-    emp::vector<double> new_pops;
+    emp::vector<long double> rel_fitnesses;
+    emp::vector<long double> init_pops;
+    emp::vector<long double> current_pops;
+    emp::vector<long double> new_pops;
     emp::vector<emp::IndexMap> mut_rates;
 
     // Drug environment specific per-genotypes values
-    emp::vector<double> drugless_fitnesses;
-    emp::vector<double> cs;
-    emp::vector<double> IC50s;
-    double max_fit;
+    emp::vector<long double> drugless_fitnesses;
+    emp::vector<long double> cs;
+    emp::vector<long double> IC50s;
+    long double max_fit;
 
     // Localized config parameters
     int N_GENOTYPES;
@@ -217,9 +217,8 @@ class NDimSim {
                 rel_fitnesses[GENOTYPE_TO_DRIVE] = sVarCD(curr_gen, rel_fitnesses[GENOTYPE_TO_DRIVE]);
                 break;
             case (int)FITNESS_CHANGE_RULES::INCREASING_DRUG:
-                for (int genotype = 0; genotype < N_GENOTYPES; genotype++) {
-                    rel_fitnesses[genotype] = sDrugIncrease(curr_gen, drugless_fitnesses[genotype], cs[genotype], IC50s[genotype]);
-                }
+                
+                sDrugIncrease(curr_gen);
                 std::cout << emp::to_string(rel_fitnesses) << std::endl;
                 break;
             default:
@@ -277,14 +276,21 @@ class NDimSim {
 
     // Methods for changing s values over time
 
-    double sDrugIncrease(double t, double g_drugless, double c, double IC50) {
+    void sDrugIncrease(double t) {
         // This function ramps up over 2M generations
         // double concentration = tanh(t/500000)*10000;
         
         // This one ramps up over 100 generations
-        double concentration = exp(t/10.85);
-        std::cout << concentration << " " << (IC50 - concentration) <<std::endl;
-        return max_fit/(g_drugless/(1 + exp((IC50 - concentration)/c))) - 1;
+        // double concentration = tanh(.03*t);
+        long double concentration = 10000/(1 + exp(-.224*(t - 75)));
+        std::cout << "Concentration: " << concentration << std::endl;
+        for (int genotype = 0; genotype < N_GENOTYPES; genotype++) {
+            rel_fitnesses[genotype] = drugless_fitnesses[genotype]/(1 + exp((IC50s[genotype] - concentration)/cs[genotype]));
+        }
+        std::cout << emp::to_string(rel_fitnesses) << std::endl;
+        for (int genotype = N_GENOTYPES - 1; genotype > -1; genotype--) {
+            rel_fitnesses[genotype] = rel_fitnesses[15]/rel_fitnesses[genotype] - 1;
+        }
     }
 
     // The following two functions were written by Shamreen Iram
@@ -309,8 +315,8 @@ class NDimSim {
 
     emp::vector<emp::IndexMap> GetMutRates() {return mut_rates;}
 
-    emp::vector<double> ExtractVectorFromConfig(std::string param, std::string name, std::string plural) {
-        emp::vector<double> result(N_GENOTYPES);
+    emp::vector<long double> ExtractVectorFromConfig(std::string param, std::string name, std::string plural) {
+        emp::vector<long double> result(N_GENOTYPES);
 
         if (emp::has_letter(param)) {
             // param is a file
@@ -334,7 +340,7 @@ class NDimSim {
         // and print them out
         std::cout << plural << ": " << std::endl;
         for (int i = 0; i < N_GENOTYPES; i++) {
-            result[i] = emp::from_string<double>(sliced_param[i]);
+            result[i] = emp::from_string<long double>(sliced_param[i]);
             std::cout << i << ": " << result[i]  << " " << std::endl;
         }
         std::cout << std::endl;
