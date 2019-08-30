@@ -17,15 +17,15 @@ theme_set(theme_classic())
 
 
 ```{r}
-pop_sizes <- read_csv("../pop_props.csv")
-colnames(pop_sizes) <- c("Generation", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15")
+pop_sizes <- read_csv("../pop_sizes.csv")
+colnames(pop_sizes) <- c("Generation", "0000", "0001", "0010", "0011", "0100", "0101", "0110", "0111", "1000", "1001", "1010", "1011", "1100", "1101", "1110", "1111")
 ```
 
 ## Graph changes over time
 
 ```{r}
-tidy_sizes <- gather(pop_sizes, key = "Population", value="N", -Generation)
-ggplot(data=tidy_sizes %>% filter(Generation %% 10 == 0), aes(x=Generation, y=N, color=Population)) + geom_line()
+tidy_sizes <- gather(pop_sizes, key = "Genotype", value="N", -Generation)
+ggplot(data=tidy_sizes %>% filter(Generation %% 10 == 0), aes(x=Generation, y=N, color=Genotype)) + geom_line() + scale_color_manual(values =  c("dodgerblue2", "#E31A1C", "green4", "#6A3D9A", "#FF7F00", "black", "gold1", "skyblue2", "palegreen2", "#FDBF6F", "maroon", "orchid1", "darkturquoise", "darkorange4", "gray70","brown"))
 
 ```
 
