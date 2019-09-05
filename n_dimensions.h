@@ -18,6 +18,7 @@ EMP_BUILD_CONFIG( EvoConfig,
 
     GROUP(FITNESS_CHANGE_PARAMETERS, "Parameters associated with various fitness change rules"),
     VALUE(FITNESS_CHANGE_RULE, int, 0, "Rule governing how fitnesses should change. 0 = NONE, 1 = VAR, 2 = VARCD, 3 = Drug with increasing dose, 4 = Drug with fixed dose"),
+    VALUE(TIME_STEPS_BEFORE_RAMP_UP, int, 0, "For fitness change rule 3, how long to wait before we start increasing concentration"),
     VALUE(DRUG_DOSE, double, 0, "For fitness change rule 3"),
 
     GROUP(PER_GENOTYPE_VALUES, "Per-genotype values"),
@@ -93,6 +94,7 @@ class NDimSim {
     double MAX_BIRTH_RATE;
     std::string FITNESSES;
     int FITNESS_CHANGE_RULE;
+    int TIME_STEPS_BEFORE_RAMP_UP;
     double DRUG_DOSE;
     int GENOTYPE_TO_DRIVE;
     std::string INIT_POPS;
@@ -125,6 +127,7 @@ class NDimSim {
         IC50S = config.IC50S();
         CS = config.CS();        
         G_DRUGLESSES = config.G_DRUGLESSES();        
+        TIME_STEPS_BEFORE_RAMP_UP = config.TIME_STEPS_BEFORE_RAMP_UP();        
 
         // Set-up per-genotype values
 
@@ -289,8 +292,14 @@ class NDimSim {
 
     // Set s for a sepcific drug concentration
     void sDrugConcentration(double concentration) {
-        for (int genotype = 0; genotype < N_GENOTYPES; genotype++) {
-            rel_fitnesses[genotype] = drugless_fitnesses[genotype]/(1 + exp((IC50s[genotype] - emp::Log10(concentration))/cs[genotype]));
+        if (concentration > 0) {
+            for (int genotype = 0; genotype < N_GENOTYPES; genotype++) {
+                rel_fitnesses[genotype] = drugless_fitnesses[genotype]/(1 + exp((IC50s[genotype] - emp::Log10(concentration))/cs[genotype]));
+            }
+        } else {
+            for (int genotype = 0; genotype < N_GENOTYPES; genotype++) {
+                rel_fitnesses[genotype] = drugless_fitnesses[genotype];
+            }
         }
         // std::cout << emp::to_string(rel_fitnesses) << std::endl;
         for (int genotype = 0; genotype < N_GENOTYPES; genotype++) {
@@ -305,7 +314,10 @@ class NDimSim {
         // This one ramps up over 100 generations
         // double concentration = tanh(.03*t);
         // long double concentration = .1/(1 + exp(-.224*(t - 75)));
-        long double concentration = .01/(1 + exp(-.02*(t - 700)));
+        long double concentration = 0;
+        if (t >= TIME_STEPS_BEFORE_RAMP_UP) {
+            concentration = .01/(1 + exp(-.07*(t - TIME_STEPS_BEFORE_RAMP_UP - 110)));
+        }
         // std::cout << "Concentration: " << concentration << std::endl;
         sDrugConcentration(concentration);
     }
