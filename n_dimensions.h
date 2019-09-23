@@ -17,12 +17,14 @@ EMP_BUILD_CONFIG( EvoConfig,
     VALUE(MAX_BIRTH_RATE, double, 2, "Maximum birth rate (b0)"),
 
     GROUP(FITNESS_CHANGE_PARAMETERS, "Parameters associated with various fitness change rules"),
-    VALUE(FITNESS_CHANGE_RULE, int, 0, "Rule governing how fitnesses should change. 0 = NONE, 1 = VAR, 2 = VARCD, 3 = Drug with increasing dose, 4 = Drug with fixed dose"),
+    VALUE(FITNESS_CHANGE_RULE, int, 0, "Rule governing how fitnesses should change. 0 = NONE, 1 = VAR, 2 = VARCD, 3 = Drug with increasing dose, 4 = Drug with fixed dose, 5 = CD Driving prescription specified in file."),
+    VALUE(GENOTYPE_TO_DRIVE, int, 0, "For fitness change rules that only apply to one genotype (VAR and VARCD), which genotype should be changed?"),    
+    VALUE(TIME_STEPS_BEFORE_RAMP_UP, int, 0, "For fitness change rule 3, how long to wait before we start increasing concentration"),
     VALUE(DRUG_DOSE, double, 0, "For fitness change rule 3"),
+    VALUE(CD_DRIVING_PRESCRIPTION, std::string, "driving.csv", "File containing driving prescription for use with fitness change rule 5"),
 
     GROUP(PER_GENOTYPE_VALUES, "Per-genotype values"),
     VALUE(FITNESSES, std::string, "0,1", "Either a list of relative fitnesses, separated by commas, or a file containing them. These are the starting ftnesses."),
-    VALUE(GENOTYPE_TO_DRIVE, int, 0, "For fitness change rules that only apply to one genotype (currently all of them), which genotype should be changed?"),    
     VALUE(IC50S, std::string, "-6.0,-5.0", "For environments simulating the application of a drug, what are the IC50 values for each genotype? Specify as list of values or name of file containing them."),
     VALUE(G_DRUGLESSES, std::string, "1,1", "For environments simulating the application of a drug, what are the growth rates in absence of the drug? Specify as list of values or name of file containing them."),
     VALUE(CS, std::string, "1,1", "Constants describing the shape of the hill functions relating dose to fitness for each genotype."),
@@ -31,7 +33,7 @@ EMP_BUILD_CONFIG( EvoConfig,
         "Either a matrix of transition probabilities or a file containing one. Rows are original genotype, columns are new one. Use commas to separate values within rows. In files, use newlines between rows. On command-line, use colons.")
 )
 
-enum class FITNESS_CHANGE_RULES { NONE=0, VAR=1, VARCD=2, INCREASING_DRUG=3, CONSTANT_DRUG=4};
+enum class FITNESS_CHANGE_RULES { NONE=0, VAR=1, VARCD=2, INCREASING_DRUG=3, CONSTANT_DRUG=4, CD_PRESCRIPTION=5};
 
 // Functions for extracting parameter lists from files
 
@@ -85,6 +87,9 @@ class NDimSim {
     emp::vector<long double> IC50s;
     long double max_fit;
 
+    // CD driving prescription (if necessary)
+    emp::vector<emp::vector<long double>> cd_prescription_data;
+
     // Localized config parameters
     int N_GENOTYPES;
     int GENERATIONS;
@@ -93,6 +98,7 @@ class NDimSim {
     double MAX_BIRTH_RATE;
     std::string FITNESSES;
     int FITNESS_CHANGE_RULE;
+    int TIME_STEPS_BEFORE_RAMP_UP;
     double DRUG_DOSE;
     int GENOTYPE_TO_DRIVE;
     std::string INIT_POPS;
@@ -100,6 +106,7 @@ class NDimSim {
     std::string IC50S;
     std::string CS;
     std::string G_DRUGLESSES;
+    std::string CD_DRIVING_PRESCRIPTION;
 
     public:
     NDimSim(EvoConfig & config) : pop_sizes("pop_sizes.csv"), pop_props("pop_props.csv") {
@@ -125,6 +132,8 @@ class NDimSim {
         IC50S = config.IC50S();
         CS = config.CS();        
         G_DRUGLESSES = config.G_DRUGLESSES();        
+        TIME_STEPS_BEFORE_RAMP_UP = config.TIME_STEPS_BEFORE_RAMP_UP();        
+        CD_DRIVING_PRESCRIPTION = config.CD_DRIVING_PRESCRIPTION();        
 
         // Set-up per-genotype values
 
@@ -147,6 +156,8 @@ class NDimSim {
         if (FITNESS_CHANGE_RULE == (int)FITNESS_CHANGE_RULES::CONSTANT_DRUG) {
             std::cout <<"Drug concentration: " << DRUG_DOSE << ". S values: " << emp::to_string(rel_fitnesses) << std::endl;
             sDrugConcentration(DRUG_DOSE);
+        } else if (FITNESS_CHANGE_RULE == (int)FITNESS_CHANGE_RULES::CD_PRESCRIPTION) { 
+            cd_prescription_data = emp::File(CD_DRIVING_PRESCRIPTION).ToData<long double>();
         }
 
         // Current population sizes of each genotype
@@ -232,6 +243,9 @@ class NDimSim {
             case (int)FITNESS_CHANGE_RULES::INCREASING_DRUG:
                 sDrugIncrease(curr_gen);
                 break;
+            case (int)FITNESS_CHANGE_RULES::CD_PRESCRIPTION:
+                rel_fitnesses = cd_prescription_data[curr_gen];
+                break;
             default:
                 std::cout << "Invalid fitness change rule. Defaulting to none." << std::endl;
                 break;
@@ -289,8 +303,14 @@ class NDimSim {
 
     // Set s for a sepcific drug concentration
     void sDrugConcentration(double concentration) {
-        for (int genotype = 0; genotype < N_GENOTYPES; genotype++) {
-            rel_fitnesses[genotype] = drugless_fitnesses[genotype]/(1 + exp((IC50s[genotype] - emp::Log10(concentration))/cs[genotype]));
+        if (concentration > 0) {
+            for (int genotype = 0; genotype < N_GENOTYPES; genotype++) {
+                rel_fitnesses[genotype] = drugless_fitnesses[genotype]/(1 + exp((IC50s[genotype] - emp::Log10(concentration))/cs[genotype]));
+            }
+        } else {
+            for (int genotype = 0; genotype < N_GENOTYPES; genotype++) {
+                rel_fitnesses[genotype] = drugless_fitnesses[genotype];
+            }
         }
         // std::cout << emp::to_string(rel_fitnesses) << std::endl;
         for (int genotype = 0; genotype < N_GENOTYPES; genotype++) {
@@ -305,7 +325,10 @@ class NDimSim {
         // This one ramps up over 100 generations
         // double concentration = tanh(.03*t);
         // long double concentration = .1/(1 + exp(-.224*(t - 75)));
-        long double concentration = .01/(1 + exp(-.02*(t - 700)));
+        long double concentration = 0;
+        if (t >= TIME_STEPS_BEFORE_RAMP_UP) {
+            concentration = .01/(1 + exp(-.07*(t - TIME_STEPS_BEFORE_RAMP_UP - 110)));
+        }
         // std::cout << "Concentration: " << concentration << std::endl;
         sDrugConcentration(concentration);
     }
