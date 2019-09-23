@@ -10,7 +10,8 @@ library(gganimate)
 library(readr)
 
 # Adjust this to choose file
-filename <- "pop_sizes.csv"
+filename1 <- "pop_sizes.csv"
+filename2 <- "pop_sizes.csv"
 
 # Adjust this to choose timepoint for snapshot
 time_point <- 10000
@@ -62,7 +63,7 @@ make_temporal_animation <- function(filename, lower_time_bound, upper_time_bound
   df <- prepare_file(filename)
   layout <- make_layout()
   data_layout <- add_data_to_graph(layout, df %>% filter(generation > lower_time_bound) %>% filter(generation < upper_time_bound) %>% filter(generation %% frame_freq == 0))
-  ggraph(data_layout) + geom_edge_link(start_cap = circle(5, 'mm'), end_cap = circle(5, 'mm')) + geom_node_circle(aes(r=sqrt(pop)/100), fill="white") + theme_graph(background = "white") + geom_node_text(aes(label=label)) + transition_time(time)
+  ggraph(data_layout) + geom_edge_link(start_cap = circle(5, 'mm'), end_cap = circle(5, 'mm')) + geom_node_circle(aes(r=sqrt(pop)/100), fill="lightblue", color="lightblue") + theme_graph(background = "white") + geom_node_text(aes(label=label)) + transition_time(time)
 }
 
 # Make a figure of a single snapshot in time
@@ -70,11 +71,23 @@ make_snapshot <- function(filename, time_point) {
   df <- prepare_file(filename)
   layout <- make_layout()
   data_layout <- add_data_to_graph(layout, df %>% filter(generation == time_point))
-  ggraph(data_layout) + geom_edge_link(start_cap = circle(5, 'mm'), end_cap = circle(5, 'mm')) + geom_node_circle(aes(r=sqrt(pop)/100), fill="white") + theme_graph(background = "white") + geom_node_text(aes(label=label))  
+  ggraph(data_layout) + geom_edge_link(start_cap = circle(5, 'mm'), end_cap = circle(5, 'mm')) + geom_node_circle(aes(r=sqrt(pop)/100), fill="lightblue", color="lightblue") + theme_graph(background = "white") + geom_node_text(aes(label=label))  
+}
+  
+
+make_circle_overlay <- function(filename1, filename2, time_point) {
+  layout <- make_layout()
+  df1 <- prepare_file(filename1)
+  df2 <- prepare_file(filename2)
+  data_layout <- add_data_to_graph(layout, df1 %>% filter(generation == time_point))
+  other_data_layout <- add_data_to_graph(layout, df2 %>% filter(generation == time_point))
+  ggraph(data_layout) + geom_edge_link(start_cap = circle(5, 'mm'), end_cap = circle(5, 'mm')) + geom_node_circle(aes(r=sqrt(pop)/100), fill="blue", color="blue", alpha=.5, stroke=0) + geom_node_circle(data= other_data_layout, aes(r=sqrt(pop)/100), fill="red", color="red",alpha=.5, stroke=0) + theme_graph(background = "white") + geom_node_text(aes(label=label))
 }
 
 # Uncomment this line to make a temporal animation
-# make_temporal_animation(filename, lower_time_bound, upper_time_bound)
+# make_temporal_animation(filename1, lower_time_bound, upper_time_bound)
 
 # This line makes a snapshot
-make_snapshot(filename, time_point)
+#make_snapshot(filename1, time_point)
+
+make_circle_overlay(filename1, filename2, time_point)
