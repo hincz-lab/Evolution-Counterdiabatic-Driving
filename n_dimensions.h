@@ -319,19 +319,27 @@ class NDimSim {
     }
 
     void sDrugIncrease(double t) {
-        // This function ramps up over 2M generations
-        // double concentration = tanh(t/500000)*10000;
-        
-        // This one ramps up over 100 generations
-        // double concentration = tanh(.03*t);
-        // long double concentration = .1/(1 + exp(-.224*(t - 75)));
         long double concentration = 0;
-        if (t >= TIME_STEPS_BEFORE_RAMP_UP) {
-            concentration = .01/(1 + exp(-.07*(t - TIME_STEPS_BEFORE_RAMP_UP - 110)));
+        if (t >= TIME_STEPS_BEFORE_RAMP_UP/2) {
+            concentration = .00015/(1 + exp(-.002*(t - TIME_STEPS_BEFORE_RAMP_UP - 110)));
         }
-        // std::cout << "Concentration: " << concentration << std::endl;
         sDrugConcentration(concentration);
-    }
+   }
+
+    // void sDrugIncrease(double t) {
+    //     // This function ramps up over 2M generations
+    //     // double concentration = tanh(t/500000)*10000;
+        
+    //     // This one ramps up over 100 generations
+    //     // double concentration = tanh(.03*t);
+    //     // long double concentration = .1/(1 + exp(-.224*(t - 75)));
+    //     long double concentration = 0;
+    //     if (t >= TIME_STEPS_BEFORE_RAMP_UP) {
+    //         concentration = .01/(1 + exp(-.07*(t - TIME_STEPS_BEFORE_RAMP_UP - 110)));
+    //     }
+    //     // std::cout << "Concentration: " << concentration << std::endl;
+    //     sDrugConcentration(concentration);
+    // }
 
     // The following two functions were written by Shamreen Iram
     // Defining tanh based gen varying s function
