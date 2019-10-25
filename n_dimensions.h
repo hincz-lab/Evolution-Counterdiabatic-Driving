@@ -20,7 +20,7 @@ EMP_BUILD_CONFIG( EvoConfig,
     VALUE(FITNESS_CHANGE_RULE, int, 0, "Rule governing how fitnesses should change. 0 = NONE, 1 = VAR, 2 = VARCD, 3 = Drug with increasing dose, 4 = Drug with fixed dose, 5 = CD Driving prescription specified in file."),
     VALUE(GENOTYPE_TO_DRIVE, int, 0, "For fitness change rules that only apply to one genotype (VAR and VARCD), which genotype should be changed?"),    
     VALUE(TIME_STEPS_BEFORE_RAMP_UP, int, 0, "For fitness change rule 3, how long to wait before we start increasing concentration"),
-    VALUE(DRUG_DOSE, double, 0, "For fitness change rule 3"),
+    VALUE(DRUG_DOSE, double, .00015, "For fitness change rules 3 and 4"),
     VALUE(CD_DRIVING_PRESCRIPTION, std::string, "driving.csv", "File containing driving prescription for use with fitness change rule 5"),
 
     GROUP(PER_GENOTYPE_VALUES, "Per-genotype values"),
@@ -154,7 +154,6 @@ class NDimSim {
         InitializeCs();
 
         if (FITNESS_CHANGE_RULE == (int)FITNESS_CHANGE_RULES::CONSTANT_DRUG) {
-            std::cout <<"Drug concentration: " << DRUG_DOSE << ". S values: " << emp::to_string(rel_fitnesses) << std::endl;
             sDrugConcentration(DRUG_DOSE);
         } else if (FITNESS_CHANGE_RULE == (int)FITNESS_CHANGE_RULES::CD_PRESCRIPTION) { 
             cd_prescription_data = emp::File(CD_DRIVING_PRESCRIPTION).ToData<long double>();
@@ -233,11 +232,11 @@ class NDimSim {
                 return;
                 break;
             case (int)FITNESS_CHANGE_RULES::VAR:
-                // This only really works for 1D right now
+                // This only really works for 1D
                 rel_fitnesses[GENOTYPE_TO_DRIVE] = sVar(curr_gen, rel_fitnesses[GENOTYPE_TO_DRIVE]);
                 break;
             case (int)FITNESS_CHANGE_RULES::VARCD:
-                // This only really works for 1D right now
+                // This only really works for 1D
                 rel_fitnesses[GENOTYPE_TO_DRIVE] = sVarCD(curr_gen, rel_fitnesses[GENOTYPE_TO_DRIVE]);
                 break;
             case (int)FITNESS_CHANGE_RULES::INCREASING_DRUG:
@@ -321,7 +320,7 @@ class NDimSim {
     void sDrugIncrease(double t) {
         long double concentration = 0;
         if (t >= TIME_STEPS_BEFORE_RAMP_UP/2) {
-            concentration = .00015/(1 + exp(-.002*(t - TIME_STEPS_BEFORE_RAMP_UP - 110)));
+            concentration = DRUG_DOSE/(1 + exp(-.002*(t - TIME_STEPS_BEFORE_RAMP_UP - 110)));
         }
         sDrugConcentration(concentration);
    }
@@ -343,22 +342,20 @@ class NDimSim {
 
     // The following two functions were written by Shamreen Iram
     // Defining tanh based gen varying s function
-    double sVarCD(double x, double s)
-    {
-    //   double s;
-    double ds,scd;
-    s=(double)(0.00075+0.00075*tanh((x-500.)/270.));
-    ds=0.00075/(270.*pow(cosh((x-500.)/270.),2.))/0.05;
-    scd=s+(ds/pow((pow((0.0008-s),2.)+4.*0.0004*s),0.5));
-    return scd;
+    double sVarCD(double x, double s) {
+        //   double s;
+        double ds,scd;
+        s=(double)(0.00075+0.00075*tanh((x-500.)/270.));
+        ds=0.00075/(270.*pow(cosh((x-500.)/270.),2.))/0.05;
+        scd=s+(ds/pow((pow((0.0008-s),2.)+4.*0.0004*s),0.5));
+        return scd;
     }
 
     // Defining tanh based gen varying s function
-    double sVar(double x, double s)
-    {
-    //   double s;
-    s=(double)(0.00075+0.00075*tanh((x-500.)/270.));
-    return s;
+    double sVar(double x, double s) {
+        //   double s;
+        s=(double)(0.00075+0.00075*tanh((x-500.)/270.));
+        return s;
     }
 
     emp::vector<emp::IndexMap> GetMutRates() {return mut_rates;}
