@@ -79,6 +79,10 @@ Alternatively, they can be set by modifying the values in the configuration file
 
 ## Other contents of this repository
 
+### Driving prescriptions
+
+The three driving prescriptions used in the paper are in the `driving_prescriptions` directory. The numbers after `maxc` in the filenames indicate the maximum allowed drug concentration in each. These prescriptions where derived as explained in the paper.
+
 ### Fitness landscapes
 
 The `landscapes` directory contains configuration files to run the model on various fitness landscapes. The only fully-specified fitness landscape currently here is the pyrimethamine resistance fitness landscape from [Ogbunugafor et. al](https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1004710), in the `landscapes/malaria_landscapes` subdirectory. It contains initial population sizes, log10(IC50) values, initial fitnesses (expressed as `s`, i.e. relative fitness), fitnesses in the absence of drug (expressed as growth rate - *not* relative fitness), and values of the constant `c`.
