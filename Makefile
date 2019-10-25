@@ -33,14 +33,15 @@ debug:	nd
 
 # web-debug:	debug-web
 
-nd:	$(PROJECT).cc $(PROJECT).h
-	$(CXX_nat) $(CFLAGS_nat) $(PROJECT).cc -o $(PROJECT)
+nd:	source/$(PROJECT).cc source/$(PROJECT).h
+	$(CXX_nat) $(CFLAGS_nat) source/$(PROJECT).cc -o $(PROJECT)
+	cp config/NDim.cfg .
 
-1d:	ABMtoFP_Evol.c
-	$(CXX_nat) ABMtoFP_Evol.c -o 1_dimension
+1d:	source/ABMtoFP_Evol.c
+	$(CXX_nat) source/ABMtoFP_Evol.c -o 1_dimension
 
-n_dimensions.js: n_dimensions_web.cc
-	$(CXX_web) $(CFLAGS_web) n_dimensions_web.cc -o web/n_dimensions.js
+n_dimensions.js: source/n_dimensions_web.cc
+	$(CXX_web) $(CFLAGS_web) source/n_dimensions_web.cc -o web/n_dimensions.js
 
 clean:
 	rm -f $(PROJECT) web/n_dimensions.js web/*.js.map web/*.js.map *~ *.o
