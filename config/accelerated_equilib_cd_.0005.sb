@@ -1,0 +1,25 @@
+#!/bin/sh
+
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=dolsone@ccf.org
+#SBATCH --job-name=accelerated_equilib
+#SBATCH -o acc_equil_%A_%a.out
+#SBATCH --mem 500
+#SBATCH -n 1
+#SBATCH --cpus-per-task=1
+#SBATCH --array=400-499
+
+module load mpc/0.8.1
+cd lustre/accelerated_equilib/data
+
+for i in {1..10}
+do
+	mkdir cd_90${SLURM_ARRAY_TASK_ID}${i}_maxc_0005
+	cd cd_90${SLURM_ARRAY_TASK_ID}${i}_maxc_0005
+	cp ../../n_dimensions .
+	cp ../../NDim.cfg .
+	cp ../../scdr*.csv .
+	cp -r ../../landscapes .
+	./n_dimensions -FITNESS_CHANGE_RULE 5 -CD_DRIVING_PRESCRIPTION scdr_001_maxc0005.csv -RANDOM_SEED 90${SLURM_ARRAY_TASK_ID}${i}
+	cd ..
+done
