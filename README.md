@@ -1,4 +1,4 @@
-# Evolution
+# Counterdiabatic Driving of Evolution
 
 Code dealing with counter adiabatic control of evolutionary processes
 
@@ -66,7 +66,7 @@ This model has a few parameters:
 - CD_DRIVING_PRESCRIPTION (string): If FITNESS_CHAGE_RULE is 5, this parameter specifies a file to load the counterdiabatic driving protocol from. The file is expected to have one line for each time step in the model (as specified with the GENERATIONS parameter). Each line should have N_GENOTYPES values representing relative fitnesses of each genotype at each time step. Values should be separated with commas.
 - IC50S (string): Needed for FITNESS_CHANGE_RULE 3 and 4. The IC50 values for each genotype, which are used to determine each genotype's fitness at a given drug concentration, based on the equation presented by [Ogbunugafor et. al](https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1004710). Specified in the same format as FITNESSES (either a list of comma-separated values or the name of a file containing comma-separated values).
 - G_DRUGLESSES (string): Needed for FITNESS_CHANGE_RULE 3 and 4. The growth rates for each genotype in the absence of drug, which are used to determine each genotype's fitness at a given drug concentration, based on the equation presented by [Ogbunugafor et. al](https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1004710). Specified in the same format as FITNESSES (either a list of comma-separated values or the name of a file containing comma-separated values).
-- CS (string): Needed for FITNESS_CHANGE_RULE 3 and 4. The [equation we use to calculate fitnesses at various drug concentrations](https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1004710) has a fitting parameter, C. Usually its value is the same for all genotypes, but this model allows different values to be specified per-genotype if desired. Use this paramater to specify its value, using the same format as FITNESSES (either a list of comma-separated values or the name of a file containing comma-separated values).
+- CS (string): Needed for FITNESS_CHANGE_RULE 3 and 4. The [equation we use to calculate fitnesses at various drug concentrations](https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1004710) has a fitting parameter, C. Usually its value is the same for all genotypes, but this model allows different values to be specified per-genotype if desired. Use this parameter to specify its value, using the same format as FITNESSES (either a list of comma-separated values or the name of a file containing comma-separated values).
 
 The values of these can be set with command line flags by placeing a dash before the name of the parameter you would like to modify and following it with the desired parameter value:
 
@@ -76,3 +76,20 @@ The values of these can be set with command line flags by placeing a dash before
 ```
 
 Alternatively, they can be set by modifying the values in the configuration file, NDim.cfg.
+
+## Other contents of this repository
+
+### Fitness landscapes
+
+The `landscapes` directory contains configuration files to run the model on various fitness landscapes. The only fully-specified fitness landscape currently here is the pyrimethamine resistance fitness landscape from [Ogbunugafor et. al](https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1004710), in the `landscapes/malaria_landscapes` subdirectory. It contains initial population sizes, log10(IC50) values, initial fitnesses (expressed as `s`, i.e. relative fitness), fitnesses in the absence of drug (expressed as growth rate - *not* relative fitness), and values of the constant `c`.
+
+There is also a `landscapes/ecoli_landscapes` directory. These contain files with the fitnesses of 16 E. coli genotypes when subjected to different antibiotics (from [this repository](https://github.com/Daniel-Nichol/EvolutionarySteering/blob/master/results.py)). We can't currently use these in the model because we need IC50 and drugless growth rate value, but they are a promising avenue for future investigation.
+
+The `landscapes/mutation_matrices` directory contains mutation matrices to supply to the TRANSITION_PROBS parameter. Each matrix assumes all mutations to adjacent (i.e. Hamming distance 1) genotypes are equally likely and no other mutations are possible. The files in this directory are mutation matrices for 16-genotype fitness landscapes with the mutation rate specified in the file name (e.g. `mut_matrix_.01.dat` has a mutation rate of .01). The mutation rate refers to the total probability of an offspring having a different genotype than its parent.
+
+Lastly, the `landscapes/scripts` directory contains a few useful scripts for working with these landscapes and creating new ones:
+
+- `make_trans_prob.py` is a script that takes the number of genotypes in the landscape and the mutation rate as command-line arguments, and outputs the mutation matrix resulting from those parameters.
+- `convert_fitness_to_s.py` is a script for converting from absolute fitness (e.g. growth rate) to the relative fitness values (`s`) used in this model. It takes the name of a file containing a single line of comma-separated numbers as input and alters the values in that file. WARNING: overwrites the data in the file you give it - make a backup! 
+- `plot_curves.py` is a script that reproduces the pyrimethamine dose-fitness curves from [Ogbunugafor et. al](https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1004710), as a check that we're doing the math right.
+
