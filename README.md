@@ -79,9 +79,13 @@ Alternatively, they can be set by modifying the values in the configuration file
 
 ## Other contents of this repository
 
+### Configurations
+
+`NDim.cfg` contains the base configuration, without counterdiabatic driving. Parameter modifications used to run other conditions were specified as command-line arguments. For the exact values used to generate data in the paper, see the SLURM submission scripts in the `config` directory.  
+
 ### Driving prescriptions
 
-The three driving prescriptions used in the paper are in the `driving_prescriptions` directory. The numbers after `maxc` in the filenames indicate the maximum allowed drug concentration in each. These prescriptions where derived as explained in the paper.
+The three driving prescriptions used in the paper are in the `driving_prescriptions` directory. The numbers after `maxc` in the filenames indicate the maximum allowed drug concentration in each. These prescriptions where derived as explained in the paper. These prescriptions are designed specifically for the pyrimethamine resistance fitness landscape with the drug increase profile described by FITNESS_CHANGE_RULE 3, a mutation rate of .001, and a carrying capacity of 5,000,000.
 
 ### Fitness landscapes
 
