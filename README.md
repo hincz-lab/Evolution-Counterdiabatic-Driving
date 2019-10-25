@@ -75,13 +75,17 @@ The values of these can be set with command line flags by placeing a dash before
 ./n_dimensions -DEATH_RATE .1 -GENERATIONS 100
 ```
 
-Alternatively, they can be set by modifying the values in the configuration file, NDim.cfg.
+Alternatively, they can be set by modifying the values in the configuration file, `NDim.cfg`. The model will use any file called `NDim.cfg` in the current directory with it as a configuration file. The configuration file used for this paper is stored in the `config` directory, but will be copied to the current directory when you run `make nd`.
 
-## Other contents of this repository
+## Contents of this repository
 
 ### Configurations
 
-`NDim.cfg` contains the base configuration, without counterdiabatic driving. Parameter modifications used to run other conditions were specified as command-line arguments. For the exact values used to generate data in the paper, see the SLURM submission scripts in the `config` directory.  
+`config/NDim.cfg` contains the base configuration, without counterdiabatic driving. Parameter modifications used to run other conditions were specified as command-line arguments. For the exact values used to generate data in the paper, see the SLURM submission scripts in the `config` directory.  
+
+### Model Code
+
+All code for both models lives in the `source` directory. The 1-dimensional model is in `ABMtoFP_Evol.c`. The majority of the code for the n-dimensional model is in `n_dimensions.h` and the remainder is in `n_dimensions.cc`.
 
 ### Driving prescriptions
 
