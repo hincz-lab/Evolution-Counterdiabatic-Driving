@@ -1,5 +1,7 @@
 # Counterdiabatic Driving of Evolution
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3523111.svg)](https://doi.org/10.5281/zenodo.3523111)
+
 Code dealing with counter adiabatic control of evolutionary processes
 
 ## Running the model
