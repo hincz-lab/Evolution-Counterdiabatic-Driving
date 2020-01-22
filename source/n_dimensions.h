@@ -15,6 +15,8 @@ EMP_BUILD_CONFIG( EvoConfig,
     VALUE(K, double, 10000, "Carrying capacity"),
     VALUE(DEATH_RATE, double, .05, "Death rate (d)"),
     VALUE(MAX_BIRTH_RATE, double, 2, "Maximum birth rate (b0)"),
+    VALUE(BOTTLENECK_FREQ, int, 0, "Frequency with which to bottleneck population (0=never)"),
+    VALUE(BOTTLENECK_SIZE, int, 10000, "Size of population after bottleneck"),
 
     GROUP(FITNESS_CHANGE_PARAMETERS, "Parameters associated with various fitness change rules"),
     VALUE(FITNESS_CHANGE_RULE, int, 0, "Rule governing how fitnesses should change. 0 = NONE, 1 = VAR, 2 = VARCD, 3 = Drug with increasing dose, 4 = Drug with fixed dose, 5 = CD Driving prescription specified in file."),
@@ -101,6 +103,8 @@ class NDimSim {
     int TIME_STEPS_BEFORE_RAMP_UP;
     double DRUG_DOSE;
     int GENOTYPE_TO_DRIVE;
+    int BOTTLENECK_FREQ;
+    int BOTTLENECK_SIZE;
     std::string INIT_POPS;
     std::string TRANSITION_PROBS;
     std::string IC50S;
@@ -133,7 +137,9 @@ class NDimSim {
         CS = config.CS();        
         G_DRUGLESSES = config.G_DRUGLESSES();        
         TIME_STEPS_BEFORE_RAMP_UP = config.TIME_STEPS_BEFORE_RAMP_UP();        
-        CD_DRIVING_PRESCRIPTION = config.CD_DRIVING_PRESCRIPTION();        
+        CD_DRIVING_PRESCRIPTION = config.CD_DRIVING_PRESCRIPTION();
+        BOTTLENECK_FREQ = config.BOTTLENECK_FREQ();
+        BOTTLENECK_SIZE = config.BOTTLENECK_SIZE();        
 
         // Set-up per-genotype values
 
@@ -157,6 +163,8 @@ class NDimSim {
             sDrugConcentration(DRUG_DOSE);
         } else if (FITNESS_CHANGE_RULE == (int)FITNESS_CHANGE_RULES::CD_PRESCRIPTION) { 
             cd_prescription_data = emp::File(CD_DRIVING_PRESCRIPTION).ToData<long double>();
+            emp_assert((int)cd_prescription_data.size() >= GENERATIONS && 
+            "CD prescription file is either not long enough for requested number of generations or does not exist");
         }
 
         // Current population sizes of each genotype
@@ -253,6 +261,14 @@ class NDimSim {
 
     void RunStep() {
         UpdateSs(); // Update fitnesses as appropriate
+
+        if (BOTTLENECK_FREQ && ((curr_gen % BOTTLENECK_FREQ) == 0)) {
+            double bottleneck_percentage = BOTTLENECK_SIZE/emp::Sum(current_pops);
+            for (auto & pop : current_pops) {
+                pop *= bottleneck_percentage;
+                pop = round(pop);
+            }
+        }
 
         // Initialize new_pops to 0 so that we can accumulate the 
         // updated population sizes of each genotype
