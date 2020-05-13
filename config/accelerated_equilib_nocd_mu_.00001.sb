@@ -1,0 +1,18 @@
+#!/bin/sh
+
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=dolsone@ccf.org
+#SBATCH --job-name=accelerated_equilib
+#SBATCH --time=0-3:00
+#SBATCH --array=601-700
+#SBATCH -o acc_equil_%A_%a.out
+
+module load mpc/0.8.1
+cd lustre/accelerated_equilib/data
+mkdir nocd_${SLURM_ARRAY_TASK_ID}_mu_.00001
+cd nocd_${SLURM_ARRAY_TASK_ID}_mu_.00001
+cp ../../n_dimensions .
+cp ../../NDim.cfg .
+cp ../../scdr_001_maxc01.csv .
+cp -r ../../landscapes .
+./n_dimensions -FITNESS_CHANGE_RULE 3 -RANDOM_SEED ${SLURM_ARRAY_TASK_ID} -TRANSITION_PROBS landscapes/mut_matrix_.00001.dat

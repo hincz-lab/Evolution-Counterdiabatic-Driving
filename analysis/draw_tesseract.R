@@ -10,8 +10,8 @@ library(gganimate)
 library(readr)
 
 # Adjust this to choose file
-# filename1 <- "pop_sizes.csv"
-# filename2 <- "pop_sizes2.csv"
+filename1 <- "../pop_sizes.csv"
+filename2 <- "../pop_sizes.csv"
 
 # Adjust this to choose timepoint for snapshot
 # time_point <- 10000
@@ -72,7 +72,7 @@ make_temporal_animation <- function(filename, lower_time_bound, upper_time_bound
   df <- prepare_file(filename)
   layout <- make_layout()
   data_layout <- add_data_to_graph(layout, df %>% filter(generation > lower_time_bound) %>% filter(generation < upper_time_bound) %>% filter(generation %% frame_freq == 0))
-  ggraph(data_layout) + geom_edge_link(start_cap = circle(5, 'mm'), end_cap = circle(5, 'mm')) + geom_node_circle(aes(r=sqrt(pop)/100), fill="lightblue", color="lightblue") + theme_graph(background = "white") + geom_node_text(aes(label=label)) + transition_time(time)
+  ggraph(data_layout) + geom_edge_link(start_cap = circle(5, 'mm'), end_cap = circle(5, 'mm')) + geom_node_circle(aes(r=(log10(pop+1))^2/75), fill="lightblue", color="lightblue") + theme_graph(background = "white") + geom_node_text(aes(label=label)) + transition_time(time)
 }
 
 # Make a figure of a single snapshot in time
@@ -80,7 +80,7 @@ make_snapshot <- function(filename, time_point) {
   df <- prepare_file(filename)
   layout <- make_layout()
   data_layout <- add_data_to_graph(layout, df %>% filter(generation == time_point))
-  ggraph(data_layout) + geom_edge_link(start_cap = circle(5, 'mm'), end_cap = circle(5, 'mm')) + geom_node_circle(aes(r=sqrt(pop)/100), fill="lightblue", color="lightblue") + theme_graph(background = "white") + geom_node_text(aes(label=label))  
+  ggraph(data_layout) + geom_edge_link(start_cap = circle(5, 'mm'), end_cap = circle(5, 'mm')) + geom_node_circle(aes(r=(log10(pop+1))^2/75), fill="lightblue", color="lightblue") + theme_graph(background = "white") + geom_node_text(aes(label=label))  
 }
   
 
@@ -127,8 +127,8 @@ draw_box_and_whiskers_animation <- function(filenameglob, lower_time_bound, uppe
   innerring_layout <- add_data_to_graph(layout, innerring_df%>% filter(generation > lower_time_bound) %>% filter(generation < upper_time_bound) %>% filter(generation  %% frame_freq == 0))
   outerring_layout <- add_data_to_graph(layout, outerring_df%>% filter(generation > lower_time_bound) %>% filter(generation < upper_time_bound) %>% filter(generation  %% frame_freq == 0))
   
-  ggraph(median_layout) + geom_edge_link(start_cap = circle(5, 'mm'), end_cap = circle(5, 'mm')) + geom_node_circle(data=outerring_layout, aes(r=log(pop+1)/10), fill="white", color="blue") + geom_node_circle(data= median_layout, aes(r=log(pop+1)/10),color="white")+ geom_node_circle(data= innerring_layout, aes(r=log(pop+1)/10), color="red") + theme_graph(background = "white") + geom_node_text(aes(label=label)) + transition_time(time)
-}
+  ggraph(median_layout) + geom_edge_link(start_cap = circle(5, 'mm'), end_cap = circle(5, 'mm')) + geom_node_circle(data=outerring_layout, aes(r=(log10(pop+1))^2/75), fill="white", color="blue") + geom_node_circle(data= median_layout, aes(r=(log10(pop+1))^2/75),color="white")+ geom_node_circle(data= innerring_layout, aes(r=(log10(pop+1))^2/75), color="red") + theme_graph(background = "white") + geom_node_text(aes(label=label)) + transition_time(time)
+  }
 
 # Uncomment this line to make a temporal animation
 # make_temporal_animation(filename1, lower_time_bound, upper_time_bound)
@@ -138,4 +138,4 @@ draw_box_and_whiskers_animation <- function(filenameglob, lower_time_bound, uppe
 
 #draw_box_and_whiskers_animation("../data/90*/pop_sizes.csv", lower_time_bound, upper_time_bound)
 
-# make_circle_overlay(filename1, filename2, time_point)
+make_circle_overlay(filename1, filename2, time_point)
