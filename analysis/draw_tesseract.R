@@ -10,15 +10,15 @@ library(gganimate)
 library(readr)
 
 # Adjust this to choose file
-filename1 <- "pop_sizes.csv"
-filename2 <- "pop_sizes.csv"
+# filename1 <- "pop_sizes.csv"
+# filename2 <- "pop_sizes2.csv"
 
 # Adjust this to choose timepoint for snapshot
-time_point <- 10000
+# time_point <- 10000
 
 # Adjust these to determine time range for animation
-lower_time_bound <- 10000
-upper_time_bound <- 20000
+# lower_time_bound <- 10000
+# upper_time_bound <- 20000
 
 # Helper for converting node ids to labels
 make_label <- function(x) {paste(as.character(as.binary(x-1, n=4)), collapse="")}
@@ -36,6 +36,15 @@ make_layout <- function() {
   layout$x <- c(4,6,5,7,3,6,3,6,2,2,5,5,1,3,2,4)
   layout$label <- sapply(layout$.ggraph.index, make_label) 
   return(layout)
+}
+
+import_data_set <- function(filenameglob) {
+  fileNames <- Sys.glob(filenameglob)
+  df <- data.frame()
+  for (file in fileNames) {
+    df <- rbind(df, read_csv(file))
+  }
+  return(df)
 }
 
 # Sneakily add supplemental data to ggraph object
@@ -81,7 +90,16 @@ make_circle_overlay <- function(filename1, filename2, time_point) {
   df2 <- prepare_file(filename2)
   data_layout <- add_data_to_graph(layout, df1 %>% filter(generation == time_point))
   other_data_layout <- add_data_to_graph(layout, df2 %>% filter(generation == time_point))
-  ggraph(data_layout) + geom_edge_link(start_cap = circle(5, 'mm'), end_cap = circle(5, 'mm')) + geom_node_circle(aes(r=sqrt(pop)/100), fill="blue", color="blue", alpha=.5, linetype="blank") + geom_node_circle(data= other_data_layout, aes(r=sqrt(pop)/100), fill="red", color="red",alpha=.5, linetype="blank") + theme_graph(background = "white") + geom_node_text(aes(label=label))
+  ggraph(data_layout) + geom_edge_link(start_cap = circle(5, 'mm'), end_cap = circle(5, 'mm')) + geom_node_circle(aes(r=(log10(pop+1))^2/75), fill="blue", color="blue", alpha=.5, linetype="blank") + geom_node_circle(data= other_data_layout, aes(r=(log10(pop+1))^2/75), fill="red", color="red",alpha=.5, linetype="blank") + theme_graph(background = "white") + geom_node_text(aes(label=label))
+}
+
+make_circle_overlay_animation <- function(filename1, filename2, lower_time_bound, upper_time_bound, frame_freq = 10) {
+  layout <- make_layout()
+  df1 <- prepare_file(filename1)
+  df2 <- prepare_file(filename2)
+  data_layout <- add_data_to_graph(layout, df1 %>% filter(generation > lower_time_bound) %>% filter(generation < upper_time_bound) %>% filter(generation %% frame_freq == 0))
+  other_data_layout <- add_data_to_graph(layout, df2 %>% filter(generation > lower_time_bound) %>% filter(generation < upper_time_bound) %>% filter(generation %% frame_freq == 0))
+  return(ggraph(data_layout) + geom_edge_link(start_cap = circle(5, 'mm'), end_cap = circle(5, 'mm')) + geom_node_circle(aes(r=(log10(pop+1))^2/75), fill="blue", color="blue", alpha=.5, linetype="blank") + geom_node_circle(data= other_data_layout, aes(r=(log10(pop+1))^2/75), fill="red", color="red",alpha=.5, linetype="blank") + theme_graph(background = "white") + geom_node_text(aes(label=label)) + transition_time(time))
 }
 
 draw_box_and_whiskers_animation <- function(filenameglob, lower_time_bound, upper_time_bound, frame_freq = 10) {
@@ -92,8 +110,8 @@ draw_box_and_whiskers_animation <- function(filenameglob, lower_time_bound, uppe
   }
   
   median_df <- df %>% gather(-generation, key="name", value="popsize") %>% group_by(generation, name) %>% summarise(pop=median(popsize))
-  innerring_df <- df %>% gather(-generation, key="name", value="popsize") %>% group_by(generation, name) %>% summarise(pop=quantile(popsize)[2])
-  outerring_df <- df %>% gather(-generation, key="name", value="popsize") %>% group_by(generation, name) %>% summarise(pop=quantile(popsize)[4])
+  innerring_df <- df %>% gather(-generation, key="name", value="popsize") %>% group_by(generation, name) %>% summarise(pop=quantile(popsize)[1])
+  outerring_df <- df %>% gather(-generation, key="name", value="popsize") %>% group_by(generation, name) %>% summarise(pop=quantile(popsize)[5])
   
   
   median_df$name <- str_replace(median_df$name, "pop", "V")
@@ -120,4 +138,4 @@ draw_box_and_whiskers_animation <- function(filenameglob, lower_time_bound, uppe
 
 #draw_box_and_whiskers_animation("../data/90*/pop_sizes.csv", lower_time_bound, upper_time_bound)
 
-make_circle_overlay(filename1, filename2, time_point)
+# make_circle_overlay(filename1, filename2, time_point)
