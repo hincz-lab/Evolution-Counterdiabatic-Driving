@@ -14,7 +14,7 @@ Dashed lines show equilibrium proportion of genotype in population, solid show o
 
 - [Motivation](#motivation)
 - [Main takeaway](#main-takeaway)
-- [Derive your own CD driving prescription (coming soon!)]
+- [Derive your own CD driving prescription (coming soon!)](#derive-your-own-cd-driving-prescription)
 - [Instructions on running the model](#running-the-model)
 - [Detailed description of repo contents](#contents-of-this-repository)
 
@@ -38,7 +38,7 @@ This animation shows a 16-genotype fitness landscape (composed of all possible c
 
 \*\*\* Note that we are using this fitness landscape as an example of a complex real-world fitness landscape to demonstrate that we can use counterdiabatic driving to speed up evolution. We do not endorse using it to speed up the evolution of drug-resistance in the real world unless it's part of a carefully thought-out plan :)
 
-## Derive your own CD Driving prescription (coming soon!)
+## Derive your own CD Driving prescription
 
 We're still working out the kinks on this but it will be here soon!
 
