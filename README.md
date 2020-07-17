@@ -2,10 +2,17 @@
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3523111.svg)](https://doi.org/10.5281/zenodo.3523111)
 
-Code dealing with counter adiabatic control of evolutionary processes
+Code and figures for "Controlling the speed and trajectory of evolution with counterdiabatic driving"
+
+- [arXiv preprint](https://arxiv.org/abs/1912.03764)
+- [Extended abstract from Artificial Life 2020](https://www.mitpressjournals.org/doi/abs/10.1162/isal_a_00344)
 
 <img src="https://raw.githubusercontent.com/Peyara/Evolution-Counterdiabatic-Driving/master/figs/conc_anim_nocd_errorbars.gif" width="500"><img src="https://raw.githubusercontent.com/Peyara/Evolution-Counterdiabatic-Driving/master/figs/conc_anim_cd_errorbars.gif" width="500">
 
+## Sections:
+
+- [Instructions on running the code](#running-the-model)
+- [Detailed description of repo contents](#contents-of-this-repository)
 
 ## Running the model
 
