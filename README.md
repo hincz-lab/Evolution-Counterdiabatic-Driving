@@ -4,8 +4,8 @@
 
 Code dealing with counter adiabatic control of evolutionary processes
 
-![Animation of counterdiabatic driving on a 16-genotype landscape](figs/conc_anim_cd_errorbars.gif)
-![Animation of evolution without counterdiabatic driving on a 16-genotype landscape](figs/conc_anim_nocd_errorbars.gif)
+<img src="https://raw.githubusercontent.com/Peyara/Evolution-Counterdiabatic-Driving/master/figs/conc_anim_nocd_errorbars.gif" width="500"> <img src="https://raw.githubusercontent.com/Peyara/Evolution-Counterdiabatic-Driving/master/figs/conc_anim_cd_errorbars.gif" width="500">
+
 
 ## Running the model
 
