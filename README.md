@@ -4,7 +4,7 @@
 
 Code dealing with counter adiabatic control of evolutionary processes
 
-<figure><figcaption>Without counterdiabatic driving</figcaption><img src="https://raw.githubusercontent.com/Peyara/Evolution-Counterdiabatic-Driving/master/figs/conc_anim_nocd_errorbars.gif" width="500"></figure> <figure><figcaption>With counterdiabatic driving</figcaption><img src="https://raw.githubusercontent.com/Peyara/Evolution-Counterdiabatic-Driving/master/figs/conc_anim_cd_errorbars.gif" width="500"></figure>
+<img src="https://raw.githubusercontent.com/Peyara/Evolution-Counterdiabatic-Driving/master/figs/conc_anim_nocd_errorbars.gif" width="500"><img src="https://raw.githubusercontent.com/Peyara/Evolution-Counterdiabatic-Driving/master/figs/conc_anim_cd_errorbars.gif" width="500">
 
 
 ## Running the model
