@@ -2,10 +2,13 @@
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3523111.svg)](https://doi.org/10.5281/zenodo.3523111)
 
-Code and figures for "Controlling the speed and trajectory of evolution with counterdiabatic driving" by [Shamreen Iram](https://scholar.google.com/citations?user=xVgvXikAAAAJ&hl=en), [Emily Dolson](https://www.emilyldolson.com), Joshua Chiel, Julia Pelesko, Nikhil Krishnan, ̈Ozenc Gungor, Benjamin Kuznets-Speck, Sebastian Deffner, Efe Ilker, [Jacob G. Scott](https://www.lerner.ccf.org/thor/scott/lab/) and [Michael Hinczewski](http://biotheory.phys.cwru.edu/]
+Code and figures for "Controlling the speed and trajectory of evolution with counterdiabatic driving" by [Shamreen Iram](https://scholar.google.com/citations?user=xVgvXikAAAAJ&hl=en), [Emily Dolson](http://www.emilyldolson.com), Joshua Chiel, Julia Pelesko, Nikhil Krishnan, ̈Ozenc Gungor, Benjamin Kuznets-Speck, Sebastian Deffner, Efe Ilker, [Jacob G. Scott](https://www.lerner.ccf.org/thor/scott/lab/) and [Michael Hinczewski](http://biotheory.phys.cwru.edu/)
 
 - [arXiv preprint](https://arxiv.org/abs/1912.03764)
 - [Extended abstract from Artificial Life 2020](https://www.mitpressjournals.org/doi/abs/10.1162/isal_a_00344)
+
+![CD driving works!](figs/cd_driving.png)
+Dashed lines show equilibrium proportion of genotype in population, solid show observed
 
 ## Sections:
 
