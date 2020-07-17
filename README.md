@@ -2,16 +2,21 @@
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3523111.svg)](https://doi.org/10.5281/zenodo.3523111)
 
-Code and figures for "Controlling the speed and trajectory of evolution with counterdiabatic driving"
+Code and figures for "Controlling the speed and trajectory of evolution with counterdiabatic driving" by [Shamreen Iram](https://scholar.google.com/citations?user=xVgvXikAAAAJ&hl=en), [Emily Dolson](https://www.emilyldolson.com), Joshua Chiel, Julia Pelesko, Nikhil Krishnan, ̈Ozenc Gungor, Benjamin Kuznets-Speck, Sebastian Deffner, Efe Ilker, [Jacob G. Scott](https://www.lerner.ccf.org/thor/scott/lab/) and [Michael Hinczewski](http://biotheory.phys.cwru.edu/]
 
 - [arXiv preprint](https://arxiv.org/abs/1912.03764)
 - [Extended abstract from Artificial Life 2020](https://www.mitpressjournals.org/doi/abs/10.1162/isal_a_00344)
 
 ## Sections:
 
-- [Our primary conclusions](#main-takeaway)
+- [Motivation](#motivation)
+- [Main takeaway](#main-takeaway)
 - [Instructions on running the code](#running-the-model)
 - [Detailed description of repo contents](#contents-of-this-repository)
+
+## Motivation
+
+Evolution is increasingly recognized as a powerful tool for building and controlling living and lifelike systems. However, the complexity and stochasticity of the evolutionary process have thus far made it more of a blunt instrument than a tool that can be precisely controlled. Here, we present an approach that can begin to give us the level of fine control we need to harness evolution for a wider variety of purposes. A common step in using evolution to achieve a desired end result is to gradually change an environment over time along some continuous axis. Previously, we lacked guidelines for what pattern this environmental change should follow. Here we summarize a recently-developed solution to this problem in the case where we have perfect knowledge of the fitness landscape. Using an approach from physics called counterdiabatic driving, we can mathematically derive a prescription for how to change the environment so that the population arrives at the adaptive end-state as quickly as possible.
 
 ## Main takeaway
 
@@ -19,7 +24,7 @@ Normally, quickly changing the environment a population is evolving in will crea
 
 #### Left: without counterdiabatic driving, right: with counterdiabatic driving
 
-<img src="https://raw.githubusercontent.com/Peyara/Evolution-Counterdiabatic-Driving/master/figs/conc_anim_nocd_errorbars.gif" width="400"><img src="https://raw.githubusercontent.com/Peyara/Evolution-Counterdiabatic-Driving/master/figs/conc_anim_cd_errorbars.gif" width="400">
+<img src="https://raw.githubusercontent.com/Peyara/Evolution-Counterdiabatic-Driving/master/figs/conc_anim_nocd_errorbars.gif" width="500"><img src="https://raw.githubusercontent.com/Peyara/Evolution-Counterdiabatic-Driving/master/figs/conc_anim_cd_errorbars.gif" width="500">
 
 This animation shows a 16-genotype fitness landscape (composed of all possible combinations of 4 genes that can have one of two alleles). Genotypes connected by lines are mutationally-adjacent. Node size indicates number of individuals in the population with a given genotype. Nodes are depicted with 1) a red circle indicating the population size we would theoretically expect at equilibrium, and 2) a blue circle indicating the observed population size across 1000 runs (there are error bars but they're often too small to see). Where the circles overlap, they look purple. The animation starts with the entire population at genotype 0000, which has none of the four drug-resistance genes\*. As the drug concentration\*\* increases, the fitness of genotype 0000 decreases and the population begins to explore the rest of the landscape. Eventually the drug concentration becomes high enough that 1111 becomes fitter than 1110. With counterdiabatic driving, the actual distribution of genotypes in the population shifts almost as fast as the equilibrium value does\*\*\*. Without counterdiabatic driving it takes a very long time.
 
@@ -27,7 +32,7 @@ This animation shows a 16-genotype fitness landscape (composed of all possible c
 
 \*\* The concentration shown on the figure is the drug concentration in the reference sequence of environments. The actual concentration used in the counterdiabatic driving condition is different.
 
-\*\*\* Note that we are using this fitness landscape as an example of a complex real-world fitness landscape to demonstrate that we can use counterdiabatic driving to speed up evolution. We do not endorse using it to speed up the evolution of drug-resistance unless it's part of a carefully thought-out plan.
+\*\*\* Note that we are using this fitness landscape as an example of a complex real-world fitness landscape to demonstrate that we can use counterdiabatic driving to speed up evolution. We do not endorse using it to speed up the evolution of drug-resistance in the real world unless it's part of a carefully thought-out plan :)
 
 ## Running the model
 
@@ -74,6 +79,8 @@ You can run the n-dimensional model with:
 make nd  # compile the code
 ./n_dimensions  # run the code
 ```
+
+(note that this requires a relatively modern compiler - e.g. g++ 8 or higher)
 
 This model has a few parameters:
 
