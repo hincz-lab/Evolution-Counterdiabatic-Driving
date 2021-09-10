@@ -2,16 +2,20 @@
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3523111.svg)](https://doi.org/10.5281/zenodo.3523111)
 
-Code and figures for "Controlling the speed and trajectory of evolution with counterdiabatic driving" by [Shamreen Iram](https://scholar.google.com/citations?user=xVgvXikAAAAJ&hl=en), [Emily Dolson](https://www.emilyldolson.com), Joshua Chiel, Julia Pelesko, Nikhil Krishnan, ̈Ozenc Gungor, Benjamin Kuznets-Speck, Sebastian Deffner, Efe Ilker, [Jacob G. Scott](https://www.lerner.ccf.org/thor/scott/lab/) and [Michael Hinczewski](http://biotheory.phys.cwru.edu/]
+Code and figures for "Controlling the speed and trajectory of evolution with counterdiabatic driving" by [Shamreen Iram](https://scholar.google.com/citations?user=xVgvXikAAAAJ&hl=en), [Emily Dolson](http://www.emilyldolson.com), Joshua Chiel, Julia Pelesko, Nikhil Krishnan, ̈Ozenc Gungor, Benjamin Kuznets-Speck, Sebastian Deffner, Efe Ilker, [Jacob G. Scott](https://www.lerner.ccf.org/thor/scott/lab/) and [Michael Hinczewski](http://biotheory.phys.cwru.edu/)
 
 - [arXiv preprint](https://arxiv.org/abs/1912.03764)
 - [Extended abstract from Artificial Life 2020](https://www.mitpressjournals.org/doi/abs/10.1162/isal_a_00344)
+
+![CD driving works!](figs/cd_driving.png)
+Dashed lines show equilibrium proportion of genotype in population, solid show observed
 
 ## Sections:
 
 - [Motivation](#motivation)
 - [Main takeaway](#main-takeaway)
-- [Instructions on running the code](#running-the-model)
+- [Derive your own CD driving prescription (coming soon!)](#derive-your-own-cd-driving-prescription)
+- [Instructions on running the model](#running-the-model)
 - [Detailed description of repo contents](#contents-of-this-repository)
 
 ## Motivation
@@ -24,7 +28,7 @@ Normally, quickly changing the environment a population is evolving in will crea
 
 #### Left: without counterdiabatic driving, right: with counterdiabatic driving
 
-<img src="https://raw.githubusercontent.com/Peyara/Evolution-Counterdiabatic-Driving/master/figs/conc_anim_nocd_errorbars.gif" width="500"><img src="https://raw.githubusercontent.com/Peyara/Evolution-Counterdiabatic-Driving/master/figs/conc_anim_cd_errorbars.gif" width="500">
+<img src="https://raw.githubusercontent.com/Peyara/Evolution-Counterdiabatic-Driving/master/figs/conc_anim_nocd_errorbars.gif" width="350"><img src="https://raw.githubusercontent.com/Peyara/Evolution-Counterdiabatic-Driving/master/figs/conc_anim_cd_errorbars.gif" width="350">
 
 This animation shows a 16-genotype fitness landscape (composed of all possible combinations of 4 genes that can have one of two alleles). Genotypes connected by lines are mutationally-adjacent. Node size indicates number of individuals in the population with a given genotype. Nodes are depicted with 1) a red circle indicating the population size we would theoretically expect at equilibrium, and 2) a blue circle indicating the observed population size across 1000 runs (there are error bars but they're often too small to see). Where the circles overlap, they look purple. The animation starts with the entire population at genotype 0000, which has none of the four drug-resistance genes\*. As the drug concentration\*\* increases, the fitness of genotype 0000 decreases and the population begins to explore the rest of the landscape. Eventually the drug concentration becomes high enough that 1111 becomes fitter than 1110. With counterdiabatic driving, the actual distribution of genotypes in the population shifts almost as fast as the equilibrium value does\*\*\*. Without counterdiabatic driving it takes a very long time.
 
@@ -33,6 +37,10 @@ This animation shows a 16-genotype fitness landscape (composed of all possible c
 \*\* The concentration shown on the figure is the drug concentration in the reference sequence of environments. The actual concentration used in the counterdiabatic driving condition is different.
 
 \*\*\* Note that we are using this fitness landscape as an example of a complex real-world fitness landscape to demonstrate that we can use counterdiabatic driving to speed up evolution. We do not endorse using it to speed up the evolution of drug-resistance in the real world unless it's part of a carefully thought-out plan :)
+
+## Derive your own CD Driving prescription
+
+We're still working out the kinks on this but it will be here soon!
 
 ## Running the model
 
