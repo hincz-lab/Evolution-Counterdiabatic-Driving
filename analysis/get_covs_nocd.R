@@ -1,0 +1,18 @@
+library(tidyverse)
+
+import_data_set <- function(filenameglob) {
+   fileNames <- Sys.glob(filenameglob)
+   df <- data.frame()
+   for (file in fileNames) {
+     df <- rbind(df, read_csv(file))
+   }
+   return(df)
+}
+
+
+nocd_df <- import_data_set("nocd*/pop_sizes.csv") 
+
+
+nocd_df <- nocd_df %>% group_by(generation) %>% summarize(mean0=mean(pop0),mean1=mean(pop1),mean2=mean(pop2),mean3=mean(pop3),mean4=mean(pop4),mean5=mean(pop5),mean6=mean(pop6),mean7=mean(pop7),mean8=mean(pop8),mean9=mean(pop9),mean10=mean(pop10),mean11=mean(pop11),mean12=mean(pop12),mean13=mean(pop13),mean14=mean(pop14),mean15=mean(pop15), var0=var(pop0),var1=var(pop1),var2=var(pop2),var3=var(pop3),var4=var(pop4),var5=var(pop5),var6=var(pop6),var7=var(pop7),var8=var(pop8),var9=var(pop9),var10=var(pop10),var11=var(pop11),var12=var(pop12),var13=var(pop13),var14=var(pop14),var15=var(pop15),cov1x0=cov(pop1,pop0),cov2x0=cov(pop2,pop0),cov2x1=cov(pop2,pop1),cov3x0=cov(pop3,pop0),cov3x1=cov(pop3,pop1),cov3x2=cov(pop3,pop2),cov4x0=cov(pop4,pop0),cov4x1=cov(pop4,pop1),cov4x2=cov(pop4,pop2),cov4x3=cov(pop4,pop3),cov5x0=cov(pop5,pop0),cov5x1=cov(pop5,pop1),cov5x2=cov(pop5,pop2),cov5x3=cov(pop5,pop3),cov5x4=cov(pop5,pop4),cov6x0=cov(pop6,pop0),cov6x1=cov(pop6,pop1),cov6x2=cov(pop6,pop2),cov6x3=cov(pop6,pop3),cov6x4=cov(pop6,pop4),cov6x5=cov(pop6,pop5),cov7x0=cov(pop7,pop0),cov7x1=cov(pop7,pop1),cov7x2=cov(pop7,pop2),cov7x3=cov(pop7,pop3),cov7x4=cov(pop7,pop4),cov7x5=cov(pop7,pop5),cov7x6=cov(pop7,pop6),cov8x0=cov(pop8,pop0),cov8x1=cov(pop8,pop1),cov8x2=cov(pop8,pop2),cov8x3=cov(pop8,pop3),cov8x4=cov(pop8,pop4),cov8x5=cov(pop8,pop5),cov8x6=cov(pop8,pop6),cov8x7=cov(pop8,pop7),cov9x0=cov(pop9,pop0),cov9x1=cov(pop9,pop1),cov9x2=cov(pop9,pop2),cov9x3=cov(pop9,pop3),cov9x4=cov(pop9,pop4),cov9x5=cov(pop9,pop5),cov9x6=cov(pop9,pop6),cov9x7=cov(pop9,pop7),cov9x8=cov(pop9,pop8),cov10x0=cov(pop10,pop0),cov10x1=cov(pop10,pop1),cov10x2=cov(pop10,pop2),cov10x3=cov(pop10,pop3),cov10x4=cov(pop10,pop4),cov10x5=cov(pop10,pop5),cov10x6=cov(pop10,pop6),cov10x7=cov(pop10,pop7),cov10x8=cov(pop10,pop8),cov10x9=cov(pop10,pop9),cov11x0=cov(pop11,pop0),cov11x1=cov(pop11,pop1),cov11x2=cov(pop11,pop2),cov11x3=cov(pop11,pop3),cov11x4=cov(pop11,pop4),cov11x5=cov(pop11,pop5),cov11x6=cov(pop11,pop6),cov11x7=cov(pop11,pop7),cov11x8=cov(pop11,pop8),cov11x9=cov(pop11,pop9),cov11x10=cov(pop11,pop10),cov12x0=cov(pop12,pop0),cov12x1=cov(pop12,pop1),cov12x2=cov(pop12,pop2),cov12x3=cov(pop12,pop3),cov12x4=cov(pop12,pop4),cov12x5=cov(pop12,pop5),cov12x6=cov(pop12,pop6),cov12x7=cov(pop12,pop7),cov12x8=cov(pop12,pop8),cov12x9=cov(pop12,pop9),cov12x10=cov(pop12,pop10),cov12x11=cov(pop12,pop11),cov13x0=cov(pop13,pop0),cov13x1=cov(pop13,pop1),cov13x2=cov(pop13,pop2),cov13x3=cov(pop13,pop3),cov13x4=cov(pop13,pop4),cov13x5=cov(pop13,pop5),cov13x6=cov(pop13,pop6),cov13x7=cov(pop13,pop7),cov13x8=cov(pop13,pop8),cov13x9=cov(pop13,pop9),cov13x10=cov(pop13,pop10),cov13x11=cov(pop13,pop11),cov13x12=cov(pop13,pop12),cov14x0=cov(pop14,pop0),cov14x1=cov(pop14,pop1),cov14x2=cov(pop14,pop2),cov14x3=cov(pop14,pop3),cov14x4=cov(pop14,pop4),cov14x5=cov(pop14,pop5),cov14x6=cov(pop14,pop6),cov14x7=cov(pop14,pop7),cov14x8=cov(pop14,pop8),cov14x9=cov(pop14,pop9),cov14x10=cov(pop14,pop10),cov14x11=cov(pop14,pop11),cov14x12=cov(pop14,pop12),cov14x13=cov(pop14,pop13),cov15x0=cov(pop15,pop0),cov15x1=cov(pop15,pop1),cov15x2=cov(pop15,pop2),cov15x3=cov(pop15,pop3),cov15x4=cov(pop15,pop4),cov15x5=cov(pop15,pop5),cov15x6=cov(pop15,pop6),cov15x7=cov(pop15,pop7),cov15x8=cov(pop15,pop8),cov15x9=cov(pop15,pop9),cov15x10=cov(pop15,pop10),cov15x11=cov(pop15,pop11),cov15x12=cov(pop15,pop12),cov15x13=cov(pop15,pop13),cov15x14=cov(pop15,pop14))
+
+write_csv(nocd_df, "nocd_alt9.csv")
